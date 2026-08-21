@@ -1,15 +1,16 @@
 package ntu.nguyenhoangphuc.personal_diary.model;
 
-// Model đại diện cho 1 bài nhật ký
+// Model đại diện cho 1 bài nhật ký, ánh xạ trực tiếp với bảng NhatKy trong SQLite
 public class DiaryEntry {
 
     private int id;
     private String ngayThang;   // Định dạng yyyy-MM-dd
     private String noiDung;     // Nội dung bài viết
-    private String tamTrang;    // Mã emoji
-    private String theGan;      // Tên thẻ/nhãn
+    private String tamTrang;    // Mã emoji, có thể null nếu không chọn
+    private String theGan;      // Tên thẻ/nhãn, có thể null
     private String ngayTao;     // Timestamp lúc tạo record
 
+    // Khởi tạo KHÔNG có id — dùng khi tạo bài mới, vì id sẽ do SQLite tự sinh
     public DiaryEntry(String ngayThang, String noiDung, String tamTrang, String theGan, String ngayTao) {
         this.ngayThang = ngayThang;
         this.noiDung = noiDung;
@@ -18,7 +19,8 @@ public class DiaryEntry {
         this.ngayTao = ngayTao;
     }
 
-    // Constructor CÓ id — dùng khi đọc dữ liệu từ SQLite ra
+    // Khởi tạo CÓ id — dùng khi đọc dữ liệu từ SQLite ra
+    // record đã tồn tại trong database nên đã có id thật
     public DiaryEntry(int id, String ngayThang, String noiDung, String tamTrang, String theGan, String ngayTao) {
         this.id = id;
         this.ngayThang = ngayThang;

@@ -24,4 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Personal_Diary"
 include(":app")
- 

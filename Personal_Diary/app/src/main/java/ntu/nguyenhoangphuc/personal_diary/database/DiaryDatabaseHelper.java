@@ -38,6 +38,9 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    // onConfigure được gọi TRƯỚC onCreate/onUpgrade, đúng chỗ để bật ràng buộc khoá ngoại.
+    // SQLite mặc định TẮT khoá ngoại — không bật dòng này thì ON DELETE CASCADE
+    // Ở bảng AnhNhatKy sẽ không hoạt động, xoá bài viết sẽ để lại ảnh mồ côi trong database.
     @Override
     public void onConfigure(SQLiteDatabase db) {
         super.onConfigure(db);
