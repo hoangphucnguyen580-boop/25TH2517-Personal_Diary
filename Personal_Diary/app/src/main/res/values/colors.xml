@@ -1,5 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- 60% nền -->
+    <color name="bg_main">#FFF8F0</color>
+    <!-- 30% phụ: toolbar, streak row -->
+    <color name="bg_secondary">#F4E4D6</color>
+    <!-- 10% nhấn: FAB, active state, ribbon -->
+    <color name="accent_terracotta">#C96A4F</color>
+    <color name="accent_terracotta_dark">#A8543D</color>
+
+    <color name="text_primary">#3D2B24</color>
+    <color name="text_secondary">#6B5647</color>
+    <color name="nav_inactive">#A69885</color>
+
+    <color name="border_soft">#E8D5C3</color>
+    <color name="border_dashed">#DCC3AC</color>
+    <color name="fold_corner">#F0DCC8</color>
+
+    <color name="card_bg">#FFFDFA</color>
+    <color name="on_accent">#FFF8F0</color>
+    <color name="badge_dark">#3D2B24</color>
+
+    <!-- Mood colors - luôn đi kèm icon, không dùng màu làm dấu hiệu duy nhất -->
+    <color name="mood_happy">#E8A33D</color>
+    <color name="mood_calm">#7C9473</color>
+    <color name="mood_sad">#6B8CAE</color>
+    <color name="mood_angry">#C4574B</color>
+    <color name="mood_neutral">#A69885</color>
 </resources>
