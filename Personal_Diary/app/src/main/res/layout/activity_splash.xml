@@ -20,6 +20,6 @@
         android:textSize="26sp"
         android:textStyle="bold"
         android:textColor="#E8704A"
-        android:fontFamily="@font/baloo2" />
+        android:fontFamily="@font/baloo_2_bold"
 
 </LinearLayout>
