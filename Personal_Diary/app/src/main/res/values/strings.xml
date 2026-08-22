@@ -1,3 +1,21 @@
 <resources>
     <string name="app_name">Nhật Ký Cá Nhân</string>
+    <string name="hint_search">Tìm kiếm nhật ký</string>
+    <string name="cd_search">Biểu tượng tìm kiếm</string>
+    <string name="cd_streak">Biểu tượng streak</string>
+    <string name="streak_placeholder">12 ngày liên tiếp</string>
+
+    <string name="banner_title">1 năm trước, hôm nay</string>
+    <string name="banner_placeholder">Mày đã viết về…</string>
+    <string name="cd_banner_thumb">Ảnh minh hoạ bài viết năm trước</string>
+    <string name="cd_open">Mở xem bài viết cũ</string>
+
+    <string name="cd_add_entry">Thêm bài nhật ký mới</string>
+
+    <string name="cd_entry_thumb">Ảnh minh hoạ bài viết</string>
+    <string name="cd_mood">Tâm trạng khi viết bài</string>
+    <string name="photo_count_placeholder">+3</string>
+    <string name="entry_excerpt_placeholder">Đoạn trích nội dung bài viết hiển thị ở đây…</string>
+    <string name="entry_date_placeholder">20/08</string>
+    <string name="tag_placeholder">Nhãn</string>
 </resources>
