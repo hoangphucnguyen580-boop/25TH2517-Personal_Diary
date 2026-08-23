@@ -10,12 +10,18 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.List;
+
 import ntu.nguyenhoangphuc.personal_diary.R;
+import ntu.nguyenhoangphuc.personal_diary.adapter.DiaryAdapter;
+import ntu.nguyenhoangphuc.personal_diary.database.DiaryDatabaseHelper;
+import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
 
 public class HomeFragment extends Fragment {
 
@@ -25,6 +31,11 @@ public class HomeFragment extends Fragment {
     private View bannerOnThisDay;
     private View bannerPin;
     private FloatingActionButton fabAddEntry;
+
+    // ↓↓↓ MỚI THÊM - field để giữ tham chiếu tới DB và Adapter, dùng lại được
+    //     ở các hàm khác trong fragment này (không chỉ trong onViewCreated)
+    private DiaryDatabaseHelper dbHelper;
+    private DiaryAdapter adapter;
 
     @Nullable
     @Override
@@ -66,9 +77,21 @@ public class HomeFragment extends Fragment {
         bannerOnThisDay.setVisibility(View.GONE);
         bannerPin.setVisibility(View.GONE);
 
-        // TODO: gắn DiaryAdapter cho recyclerDiary khi tao với mày thiết kế xong Adapter
-        // TODO: load dữ liệu thật từ DiaryDatabaseHelper để set textStreak,
-        //       và bật lại bannerOnThisDay/bannerPin khi có bài trùng ngày/tháng năm trước
+        // ↓↓↓ MỚI THÊM - thay cho 2 dòng TODO cũ (gắn Adapter + load dữ liệu thật)
+        dbHelper = new DiaryDatabaseHelper(requireContext());
+        recyclerDiary.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        List<DiaryEntry> danhSachNhatKy = dbHelper.getAllDiaries();
+        adapter = new DiaryAdapter(requireContext(), danhSachNhatKy, dbHelper);
+        adapter.setOnItemClickListener(entry -> {
+            // TODO: mở AddEditDiaryActivity ở chế độ SỬA khi màn đó viết xong,
+            //       truyền entry.getId() qua Intent để biết đang sửa bài nào
+        });
+        recyclerDiary.setAdapter(adapter);
+
+        // TODO: load textStreak thật + bật lại bannerOnThisDay/bannerPin khi có
+        //       bài trùng ngày/tháng năm trước (việc #3, chưa làm - cần hàm tính
+        //       streak trong DiaryDatabaseHelper trước, hiện chưa có)
 
         fabAddEntry.setOnClickListener(v -> {
             // TODO: mở AddEditDiaryActivity khi màn đó viết xong
