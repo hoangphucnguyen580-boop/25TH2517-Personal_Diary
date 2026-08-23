@@ -31,10 +31,10 @@ import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
  * View thay vì tạo mới liên tục để đỡ tốn bộ nhớ) ở HomeFragment.
  * Nhiệm vụ: biến từng DiaryEntry thành 1 item_diary_entry.xml hiển thị.
  *
- * ⚠️ 2 ĐIỂM TAO TỰ QUYẾT (chưa có AddEditDiaryActivity nên chưa chốt được
- * với mày) - đọc kỹ phần "CẦN XÁC NHẬN" ở cuối tin nhắn:
- * 1) the_gan lưu nhiều tag cách nhau bằng dấu phẩy (vd "Công việc,Gia đình")
- * 2) tam_trang mới map được 2/5 icon (thiếu ic_mood_sad/angry/calm)
+ * ⚠️ 1 ĐIỂM CÒN CHỜ XÁC NHẬN: the_gan lưu nhiều tag cách nhau bằng dấu phẩy
+ * (vd "Công việc,Gia đình") - đã chốt là "cả 2" (chọn sẵn + gõ thêm) ở
+ * AddEditDiaryActivity, miễn lúc lưu vẫn ghép lại thành 1 chuỗi phẩy là khớp.
+ * (Mood - 5 icon đã đủ, xong rồi, không còn TODO nữa.)
  */
 public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHolder> {
 
@@ -157,7 +157,9 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
         }
     }
 
-    // Gán icon mood - xem ghi chú "CẦN XÁC NHẬN" ở đầu file, hiện chỉ đủ 2/5 icon
+    // Gán icon mood - đủ 5 nhánh rồi (trước chỉ có 2).
+    // Tô màu icon theo đúng 5 màu mood_happy/calm/sad/angry/neutral có sẵn trong colors.xml.
+    // Nếu mày KHÔNG muốn tô màu (giữ icon đen trắng thôi) thì xoá dòng setColorFilter là được.
     private void ganMoodVaoBadge(DiaryViewHolder holder, String tamTrang) {
         if (tamTrang == null || tamTrang.isEmpty()) {
             holder.badgeMood.setVisibility(View.GONE);
@@ -165,12 +167,35 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
         }
 
         holder.badgeMood.setVisibility(View.VISIBLE);
-        if ("happy".equals(tamTrang)) {
-            holder.badgeMood.setImageResource(R.drawable.ic_mood_smile);
-        } else {
-            // TODO: bổ sung đủ 5 nhánh (happy/calm/sad/angry/neutral) khi có đủ icon
-            holder.badgeMood.setImageResource(R.drawable.ic_mood_neutral);
+
+        int drawableRes;
+        int colorRes;
+        switch (tamTrang) {
+            case "happy":
+                drawableRes = R.drawable.ic_mood_smile;
+                colorRes = R.color.mood_happy;
+                break;
+            case "calm":
+                drawableRes = R.drawable.ic_mood_calm;
+                colorRes = R.color.mood_calm;
+                break;
+            case "sad":
+                drawableRes = R.drawable.ic_mood_sad;
+                colorRes = R.color.mood_sad;
+                break;
+            case "angry":
+                drawableRes = R.drawable.ic_mood_angry;
+                colorRes = R.color.mood_angry;
+                break;
+            case "neutral":
+            default:
+                drawableRes = R.drawable.ic_mood_neutral;
+                colorRes = R.color.mood_neutral;
+                break;
         }
+
+        holder.badgeMood.setImageResource(drawableRes);
+        holder.badgeMood.setColorFilter(ContextCompat.getColor(context, colorRes));
     }
 
     // Lấy ảnh đầu tiên (thu_tu = 0) làm thumbnail + hiện số lượng ảnh nếu > 1.
@@ -201,7 +226,7 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
 
     // Giải mã ảnh với kích thước thu nhỏ sẵn (tránh OOM - lỗi hết bộ nhớ hay gặp
     // khi decode ảnh gốc full-size chỉ để hiện thumbnail nhỏ xíu 42dp).
-    // Theo đúng pattern chính hãng Android - xem link tham khảo cuối tin nhắn.
+    // Theo đúng pattern chính hãng Android - xem link tham khảo cuối tin nhắn trước.
     private Bitmap giaiMaAnhGonNhe(String duongDan, int reqWidth, int reqHeight) {
         File file = new File(duongDan);
         if (!file.exists()) {
