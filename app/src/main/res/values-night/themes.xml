@@ -3,5 +3,28 @@
     <style name="Base.Theme.Personal_Diary" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Primary: FAB, nút chính, trạng thái active -->
+        <item name="colorPrimary">@color/accent_terracotta</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorPrimaryContainer">@color/bg_secondary</item>
+        <item name="colorOnPrimaryContainer">@color/text_primary</item>
+
+        <!-- Secondary: Material3 dùng cặp này để tô pill active-indicator
+             của BottomNavigationView -> gán = bg_secondary để pill hoà
+             vào nền, không nổi tím -->
+        <item name="colorSecondary">@color/accent_terracotta</item>
+        <item name="colorOnSecondary">@color/on_accent</item>
+        <item name="colorSecondaryContainer">@color/bg_secondary</item>
+        <item name="colorOnSecondaryContainer">@color/text_primary</item>
+
+        <!-- Surface/Background chung toàn app -->
+        <item name="colorSurface">@color/card_bg</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/bg_main</item>
+
+        <!-- Status bar: đồng màu toolbar (bg_secondary), icon status bar
+             tối màu vì nền sáng -->
+        <item name="android:statusBarColor">@color/bg_secondary</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>
