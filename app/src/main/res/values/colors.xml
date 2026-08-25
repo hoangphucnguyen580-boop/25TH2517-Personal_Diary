@@ -20,10 +20,22 @@
     <color name="on_accent">#FFF8F0</color>
     <color name="badge_dark">#3D2B24</color>
 
-    <!-- Mood colors - luôn đi kèm icon, không dùng màu làm dấu hiệu duy nhất -->
-    <color name="mood_happy">#E8A33D</color>
-    <color name="mood_calm">#7C9473</color>
-    <color name="mood_sad">#6B8CAE</color>
-    <color name="mood_angry">#C4574B</color>
-    <color name="mood_neutral">#A69885</color>
+    <!-- Mood colors - đã tính lại đậm hơn để đạt chuẩn contrast WCAG,
+         dùng chung cho cả HomeFragment/DiaryAdapter lẫn AddEditDiaryActivity -->
+    <color name="mood_happy">#A7710C</color>
+    <color name="mood_calm">#558878</color>
+    <color name="mood_sad">#6182A0</color>
+    <color name="mood_angry">#C9503F</color>
+    <color name="mood_neutral">#8A7D6B</color>
+
+    <!-- ↓↓↓ MỚI THÊM cho AddEditDiaryActivity -->
+    <color name="color_nen">#FFF8F0</color>
+    <color name="color_phu">#F4E4D6</color>
+    <color name="color_nhan">#C96A4F</color>
+    <color name="color_chu_chinh">#4A2E22</color>
+    <color name="color_chu_phu">#8A5A45</color>
+    <color name="color_icon_phu">#8A7568</color>
+    <color name="mau_trang">#FFFFFF</color>
+    <color name="overlay_toi">#99000000</color>
+    <color name="color_nhan_nhat">#F5DED3</color>
 </resources>

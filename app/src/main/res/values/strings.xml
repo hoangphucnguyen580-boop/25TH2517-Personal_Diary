@@ -18,4 +18,41 @@
     <string name="entry_excerpt_placeholder">Đoạn trích nội dung bài viết hiển thị ở đây…</string>
     <string name="entry_date_placeholder">20/08</string>
     <string name="tag_placeholder">Nhãn</string>
+
+    <!-- ↓↓↓ MỚI THÊM cho AddEditDiaryActivity -->
+    <string name="quay_lai">Quay lại</string>
+    <string name="tieu_de_them">Thêm nhật ký</string>
+    <string name="tieu_de_sua">Sửa nhật ký</string>
+    <string name="luu_nhat_ky">Lưu nhật ký</string>
+    <string name="chia_se_nhat_ky">Chia sẻ nhật ký</string>
+    <string name="doc_nhat_ky">Đọc nhật ký thành tiếng</string>
+
+    <string name="noi_dung_hint">Hôm nay của mày thế nào\u2026</string>
+    <string name="nhap_giong_noi">Nhập nội dung bằng giọng nói</string>
+
+    <string name="chon_ngay">Chọn ngày</string>
+    <string name="mo_chon_ngay">Chọn ngày cho nhật ký</string>
+
+    <string name="tam_trang_label">Tâm trạng</string>
+    <string name="mood_happy_label">Vui</string>
+    <string name="mood_calm_label">Bình yên</string>
+    <string name="mood_sad_label">Buồn</string>
+    <string name="mood_angry_label">Giận</string>
+    <string name="mood_neutral_label">Trung tính</string>
+
+    <string name="goi_y_mac_dinh">Điều gì khiến mày mỉm cười hôm nay?</string>
+    <string name="doi_cau_goi_y">Đổi câu gợi ý khác</string>
+
+    <string name="the_label">Thẻ</string>
+    <string name="nhap_the_moi_hint">Thêm thẻ mới rồi nhấn Enter</string>
+
+    <string name="anh_label">Ảnh (tối đa 5)</string>
+    <string name="them_anh">Thêm ảnh</string>
+    <string name="mo_ta_anh_nhat_ky">Ảnh nhật ký</string>
+    <string name="xoa_anh_nay">Xoá ảnh này</string>
+    <string name="chu_thich_hint">Chú thích</string>
+
+    <string name="chon_nguon_anh_tieu_de">Thêm ảnh từ đâu?</string>
+    <string name="thu_vien_anh">Thư viện ảnh</string>
+    <string name="chup_anh_moi">Chụp ảnh mới</string>
 </resources>

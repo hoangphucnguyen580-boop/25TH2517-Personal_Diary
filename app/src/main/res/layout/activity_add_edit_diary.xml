@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_nen">
+
+    <!-- ============ TOOLBAR — cố định trên cùng, KHÔNG cuộn theo nội dung ============ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/color_phu"
+        android:elevation="0dp"
+        android:paddingHorizontal="4dp">
+
+        <ImageButton
+            android:id="@+id/btnQuayLai"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            app:tint="@color/color_icon_phu"
+            android:contentDescription="@string/quay_lai" />
+
+        <!-- SỬA: @font/baloo2_medium (không tồn tại) -> @font/baloo_2_bold (đã có sẵn) -->
+        <TextView
+            android:id="@+id/tvTieuDe"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/tieu_de_them"
+            android:textColor="@color/color_chu_chinh"
+            android:textSize="18sp"
+            android:fontFamily="@font/baloo_2_bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+        <!-- Java đổi text này thành @string/tieu_de_sua khi mở màn ở chế độ Sửa -->
+
+        <ImageButton
+            android:id="@+id/btnLuu"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_nut_luu"
+            android:src="@drawable/ic_check"
+            app:tint="@color/mau_trang"
+            android:contentDescription="@string/luu_nhat_ky" />
+        <!-- Duy nhất icon này tô màu nhấn — đây là hành động chính của cả màn -->
+
+        <ImageButton
+            android:id="@+id/btnChiaSe"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_share"
+            app:tint="@color/color_icon_phu"
+            android:contentDescription="@string/chia_se_nhat_ky" />
+
+        <ImageButton
+            android:id="@+id/btnDocTo"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_volume_up"
+            app:tint="@color/color_icon_phu"
+            android:contentDescription="@string/doc_nhat_ky" />
+
+    </LinearLayout>
+
+    <!-- ============ PHẦN CUỘN — mọi khối còn lại nằm trong đây ============ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 2. NỘI DUNG + MIC -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_o_nhap">
+
+                <!-- SỬA: bỏ hẳn dòng android:fontFamily="@font/nunito_sans_regular"
+                     (font chưa có file thật) — rơi về font mặc định hệ thống -->
+                <EditText
+                    android:id="@+id/edtNoiDung"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="6"
+                    android:gravity="top|start"
+                    android:background="@android:color/transparent"
+                    android:padding="12dp"
+                    android:hint="@string/noi_dung_hint"
+                    android:textColorHint="@color/color_chu_phu"
+                    android:textColor="@color/color_chu_chinh"
+                    android:textSize="15sp"
+                    android:inputType="textMultiLine|textCapSentences" />
+
+                <!-- Mic đặt Ở HÀNG RIÊNG bên dưới nội dung, không đè lên vùng gõ chữ,
+                     để tránh xung đột chạm khi người dùng đang bôi đen/di con trỏ
+                     trong EditText nhiều dòng -->
+                <ImageButton
+                    android:id="@+id/btnMic"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="end"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginBottom="4dp"
+                    android:padding="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_mic"
+                    app:tint="@color/color_icon_phu"
+                    android:contentDescription="@string/nhap_giong_noi" />
+
+            </LinearLayout>
+
+            <!-- 3. NGÀY THÁNG -->
+            <LinearLayout
+                android:id="@+id/rowNgayThang"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/bg_o_nhap"
+                android:foreground="?attr/selectableItemBackground"
+                android:paddingHorizontal="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_calendar"
+                    app:tint="@color/color_icon_phu"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/tvNgayThang"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:text="@string/chon_ngay"
+                    android:textColor="@color/color_chu_chinh"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <!-- 4. TÂM TRẠNG -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/tam_trang_label"
+                android:textColor="@color/color_chu_chinh"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <!-- Mỗi mood: icon 48dp (state selected/unselected qua setSelected() bên
+                     Java) + nhãn chữ nhỏ bên dưới. -->
+
+                <!-- SỬA: ic_mood_happy (không tồn tại) -> ic_mood_smile (tên thật đã có) -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/ivMoodHappy"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/selector_mood_happy"
+                        android:src="@drawable/ic_mood_smile"
+                        app:tint="@color/mood_icon_tint_selector"
+                        android:contentDescription="@string/mood_happy_label" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/mood_happy_label"
+                        android:textColor="@color/color_chu_phu"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/ivMoodCalm"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/selector_mood_calm"
+                        android:src="@drawable/ic_mood_calm"
+                        app:tint="@color/mood_icon_tint_selector"
+                        android:contentDescription="@string/mood_calm_label" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/mood_calm_label"
+                        android:textColor="@color/color_chu_phu"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/ivMoodSad"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/selector_mood_sad"
+                        android:src="@drawable/ic_mood_sad"
+                        app:tint="@color/mood_icon_tint_selector"
+                        android:contentDescription="@string/mood_sad_label" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/mood_sad_label"
+                        android:textColor="@color/color_chu_phu"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/ivMoodAngry"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/selector_mood_angry"
+                        android:src="@drawable/ic_mood_angry"
+                        app:tint="@color/mood_icon_tint_selector"
+                        android:contentDescription="@string/mood_angry_label" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/mood_angry_label"
+                        android:textColor="@color/color_chu_phu"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:id="@+id/ivMoodNeutral"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/selector_mood_neutral"
+                        android:src="@drawable/ic_mood_neutral"
+                        app:tint="@color/mood_icon_tint_selector"
+                        android:contentDescription="@string/mood_neutral_label" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/mood_neutral_label"
+                        android:textColor="@color/color_chu_phu"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- 5. GỢI Ý VIẾT -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_o_nhap"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="10dp">
+
+                <!-- SỬA: bỏ hẳn dòng android:fontFamily="@font/nunito_sans_regular" -->
+                <TextView
+                    android:id="@+id/tvGoiY"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/goi_y_mac_dinh"
+                    android:textColor="@color/color_chu_phu"
+                    android:textSize="13sp" />
+
+                <ImageButton
+                    android:id="@+id/btnDoiCauGoiY"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:padding="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_refresh"
+                    app:tint="@color/color_icon_phu"
+                    android:contentDescription="@string/doi_cau_goi_y" />
+
+            </LinearLayout>
+
+            <!-- 6. THẺ / TAG -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/the_label"
+                android:textColor="@color/color_chu_chinh"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/cgTagGoiY"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCongViec"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Công việc"
+                    android:checkable="true"
+                    android:textColor="@color/color_chu_chinh"
+                    app:chipBackgroundColor="@color/chip_bg_selector"
+                    app:chipStrokeColor="@color/chip_stroke_selector"
+                    app:chipStrokeWidth="1.5dp"
+                    app:checkedIconVisible="true"
+                    app:checkedIconTint="@color/color_nhan" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipGiaDinh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gia đình"
+                    android:checkable="true"
+                    android:textColor="@color/color_chu_chinh"
+                    app:chipBackgroundColor="@color/chip_bg_selector"
+                    app:chipStrokeColor="@color/chip_stroke_selector"
+                    app:chipStrokeWidth="1.5dp"
+                    app:checkedIconVisible="true"
+                    app:checkedIconTint="@color/color_nhan" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSucKhoe"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sức khoẻ"
+                    android:checkable="true"
+                    android:textColor="@color/color_chu_chinh"
+                    app:chipBackgroundColor="@color/chip_bg_selector"
+                    app:chipStrokeColor="@color/chip_stroke_selector"
+                    app:chipStrokeWidth="1.5dp"
+                    app:checkedIconVisible="true"
+                    app:checkedIconTint="@color/color_nhan" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipHocTap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Học tập"
+                    android:checkable="true"
+                    android:textColor="@color/color_chu_chinh"
+                    app:chipBackgroundColor="@color/chip_bg_selector"
+                    app:chipStrokeColor="@color/chip_stroke_selector"
+                    app:chipStrokeWidth="1.5dp"
+                    app:checkedIconVisible="true"
+                    app:checkedIconTint="@color/color_nhan" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipBanBe"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bạn bè"
+                    android:checkable="true"
+                    android:textColor="@color/color_chu_chinh"
+                    app:chipBackgroundColor="@color/chip_bg_selector"
+                    app:chipStrokeColor="@color/chip_stroke_selector"
+                    app:chipStrokeWidth="1.5dp"
+                    app:checkedIconVisible="true"
+                    app:checkedIconTint="@color/color_nhan" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <EditText
+                android:id="@+id/edtNhapTagMoi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_o_nhap"
+                android:padding="12dp"
+                android:hint="@string/nhap_the_moi_hint"
+                android:textColorHint="@color/color_chu_phu"
+                android:textColor="@color/color_chu_chinh"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:imeOptions="actionDone"
+                android:inputType="text" />
+            <!-- Java bắt sự kiện setOnEditorActionListener(EditorInfo.IME_ACTION_DONE) để
+                 tạo Chip mới từ nội dung đang gõ rồi clear ô này, thay vì cần nút "Thêm" riêng -->
+
+            <!-- 7. DẢI ẢNH -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/anh_label"
+                android:textColor="@color/color_chu_chinh"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:scrollbars="none"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:id="@+id/llDaiAnh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Item ảnh (item_anh_nhat_ky.xml) được Java addView() vào TRƯỚC
+                         btnThemAnh bên dưới — luôn addView(itemView, llDaiAnh.getChildCount()-1)
+                         để nút "+" luôn đứng cuối dải, và ẩn/vô hiệu hoá nút này khi đủ 5 ảnh -->
+                    <ImageButton
+                        android:id="@+id/btnThemAnh"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:padding="24dp"
+                        android:scaleType="fitCenter"
+                        android:background="@drawable/bg_them_anh"
+                        android:src="@drawable/ic_add"
+                        app:tint="@color/color_icon_phu"
+                        android:contentDescription="@string/them_anh" />
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>
