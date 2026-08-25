@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -52,6 +53,7 @@ public class HomeFragment extends Fragment {
         // menu ⋮ (Xuất .txt, Sắp xếp) - MaterialToolbar tự hiện icon overflow luôn.
         MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.menu_diary_list);
+        toolbar.setOverflowIcon(ContextCompat.getDrawable(requireContext(), R.drawable.ic_more_vert));
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_export_txt) {

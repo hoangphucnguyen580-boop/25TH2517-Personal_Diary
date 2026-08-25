@@ -35,8 +35,9 @@
         app:itemIconTint="@color/bottom_nav_color_selector"
         app:itemTextColor="@color/bottom_nav_color_selector"
         app:itemRippleColor="@color/bg_secondary"
-        app:menu="@menu/bottom_nav_menu"
+        app:itemActiveIndicatorStyle="@style/Widget.PersonalDiary.BottomNav.NoIndicator"
         app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />

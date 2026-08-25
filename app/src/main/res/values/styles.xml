@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Kế thừa style pill mặc định của Material3, chỉ ghi đè màu thành trong suốt
+         để khớp mockup (mockup không có pill sau icon tab đang chọn) -->
+    <style name="Widget.PersonalDiary.BottomNav.NoIndicator"
+        parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+    </style>
+
+</resources>
