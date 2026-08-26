@@ -19,7 +19,7 @@
     <string name="entry_date_placeholder">20/08</string>
     <string name="tag_placeholder">Nhãn</string>
 
-    <!-- ↓↓↓ MỚI THÊM cho AddEditDiaryActivity -->
+    <!-- ===== Bổ sung cho AddEditDiaryActivity ===== -->
     <string name="quay_lai">Quay lại</string>
     <string name="tieu_de_them">Thêm nhật ký</string>
     <string name="tieu_de_sua">Sửa nhật ký</string>

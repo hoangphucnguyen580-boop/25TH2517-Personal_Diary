@@ -20,22 +20,29 @@
     <color name="on_accent">#FFF8F0</color>
     <color name="badge_dark">#3D2B24</color>
 
-    <!-- Mood colors - đã tính lại đậm hơn để đạt chuẩn contrast WCAG,
-         dùng chung cho cả HomeFragment/DiaryAdapter lẫn AddEditDiaryActivity -->
+    <!-- Mood colors - luôn đi kèm icon, không dùng màu làm dấu hiệu duy nhất
+         (5 dòng dưới đã ĐỔI GIÁ TRỊ so với bản gốc vì bản pastel cũ fail WCAG contrast -
+         dùng chung cho cả DiaryAdapter lẫn AddEditDiaryActivity) -->
     <color name="mood_happy">#A7710C</color>
     <color name="mood_calm">#558878</color>
     <color name="mood_sad">#6182A0</color>
     <color name="mood_angry">#C9503F</color>
     <color name="mood_neutral">#8A7D6B</color>
 
-    <!-- ↓↓↓ MỚI THÊM cho AddEditDiaryActivity -->
+    <!-- ===== Bổ sung cho AddEditDiaryActivity ===== -->
+    <!-- Tên riêng cho màn này (giá trị trùng bg_main/bg_secondary/accent_terracotta ở trên) -->
     <color name="color_nen">#FFF8F0</color>
     <color name="color_phu">#F4E4D6</color>
     <color name="color_nhan">#C96A4F</color>
+
     <color name="color_chu_chinh">#4A2E22</color>
     <color name="color_chu_phu">#8A5A45</color>
+    <!-- CHỈ dùng cho icon (back/share/TTS/mic...), KHÔNG dùng cho chữ -->
     <color name="color_icon_phu">#8A7568</color>
+
     <color name="mau_trang">#FFFFFF</color>
+    <!-- Nền nút xoá ảnh - đen mờ 60% -->
     <color name="overlay_toi">#99000000</color>
+    <!-- Tint 18% của color_nhan - nền chip khi được chọn -->
     <color name="color_nhan_nhat">#F5DED3</color>
 </resources>
