@@ -163,4 +163,39 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return danhSachAnh;
     }
+
+    // Cập nhật 1 bài đã có sẵn - dùng khi Sửa bài (khác insertDiary là Thêm bài mới)
+    public void updateDiary(DiaryEntry entry) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_NGAY_THANG, entry.getNgayThang());
+        values.put(COL_NOI_DUNG, entry.getNoiDung());
+        values.put(COL_TAM_TRANG, entry.getTamTrang());
+        values.put(COL_THE_GAN, entry.getTheGan());
+        // KHÔNG update COL_NGAY_TAO - giữ nguyên thời điểm tạo bài gốc, chỉ sửa nội dung
+        db.update(TABLE_NHAT_KY, values, COL_ID + " = ?", new String[]{String.valueOf(entry.getId())});
+        db.close();
+    }
+
+    // Lấy đúng 1 bài theo id - dùng khi mở màn Sửa để tải dữ liệu cũ lên
+    public DiaryEntry getDiaryById(int diaryId) {
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT * FROM " + TABLE_NHAT_KY + " WHERE " + COL_ID + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(diaryId)});
+
+        DiaryEntry entry = null;
+        if (cursor.moveToFirst()) {
+            entry = new DiaryEntry(
+                    cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_THANG)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_NOI_DUNG)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_TAM_TRANG)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_THE_GAN)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_TAO))
+            );
+        }
+        cursor.close();
+        db.close();
+        return entry;
+    }
 }

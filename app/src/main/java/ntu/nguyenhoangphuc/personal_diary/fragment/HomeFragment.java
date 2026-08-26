@@ -1,5 +1,6 @@
 package ntu.nguyenhoangphuc.personal_diary.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,6 +24,7 @@ import ntu.nguyenhoangphuc.personal_diary.R;
 import ntu.nguyenhoangphuc.personal_diary.adapter.DiaryAdapter;
 import ntu.nguyenhoangphuc.personal_diary.database.DiaryDatabaseHelper;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
+import ntu.nguyenhoangphuc.personal_diary.activity.AddEditDiaryActivity;
 
 public class HomeFragment extends Fragment {
 
@@ -86,8 +88,9 @@ public class HomeFragment extends Fragment {
         List<DiaryEntry> danhSachNhatKy = dbHelper.getAllDiaries();
         adapter = new DiaryAdapter(requireContext(), danhSachNhatKy, dbHelper);
         adapter.setOnItemClickListener(entry -> {
-            // TODO: mở AddEditDiaryActivity ở chế độ SỬA khi màn đó viết xong,
-            //       truyền entry.getId() qua Intent để biết đang sửa bài nào
+            Intent intent = new Intent(requireContext(), AddEditDiaryActivity.class);
+            intent.putExtra(AddEditDiaryActivity.EXTRA_DIARY_ID, entry.getId());
+            startActivity(intent);
         });
         recyclerDiary.setAdapter(adapter);
 
@@ -96,7 +99,19 @@ public class HomeFragment extends Fragment {
         //       streak trong DiaryDatabaseHelper trước, hiện chưa có)
 
         fabAddEntry.setOnClickListener(v -> {
-            // TODO: mở AddEditDiaryActivity khi màn đó viết xong
+            Intent intent = new Intent(requireContext(), AddEditDiaryActivity.class);
+            startActivity(intent);
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Load lại danh sách mỗi khi quay lại màn Home - để bài mới thêm/sửa
+        // từ AddEditDiaryActivity hiện ra ngay
+        if (adapter != null && dbHelper != null) {
+            List<DiaryEntry> danhSachMoi = dbHelper.getAllDiaries();
+            adapter.capNhatDanhSach(danhSachMoi);
+        }
     }
 }
