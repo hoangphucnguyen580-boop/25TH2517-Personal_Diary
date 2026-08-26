@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nền phẳng, bo góc 12dp, dùng cho MỌI khối input: ô nội dung, hàng ngày tháng,
+     hàng gợi ý viết, ô nhập tag tay, ô chú thích ảnh — để cả màn đồng bộ 1 kiểu -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/color_phu" />
+    <corners android:radius="12dp" />
+</shape>
