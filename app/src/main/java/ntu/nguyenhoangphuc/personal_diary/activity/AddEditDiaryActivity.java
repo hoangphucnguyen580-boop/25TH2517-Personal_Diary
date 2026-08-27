@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.content.FileProvider;
+import androidx.core.content.FileProvider
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
