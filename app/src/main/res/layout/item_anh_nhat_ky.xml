@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="96dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="8dp"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/color_phu">
+
+        <ImageView
+            android:id="@+id/ivAnh"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/mo_ta_anh_nhat_ky"
+            tools:src="@tools:sample/backgrounds/scenic" />
+
+        <ImageButton
+            android:id="@+id/btnXoaAnh"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="4dp"
+            android:padding="4dp"
+            android:background="@drawable/bg_nut_xoa"
+            android:src="@drawable/ic_close"
+            app:tint="@color/mau_trang"
+            android:contentDescription="@string/xoa_anh_nay"
+            android:scaleType="fitCenter" />
+
+    </androidx.cardview.widget.CardView>
+
+    <EditText
+        android:id="@+id/edtChuThich"
+        android:layout_width="96dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_o_nhap"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="4dp"
+        android:hint="@string/chu_thich_hint"
+        android:textColorHint="@color/color_chu_phu"
+        android:textColor="@color/color_chu_chinh"
+        android:textSize="10sp"
+        android:maxLines="1"
+        android:imeOptions="actionDone"
+        android:inputType="text" />
+
+</LinearLayout>

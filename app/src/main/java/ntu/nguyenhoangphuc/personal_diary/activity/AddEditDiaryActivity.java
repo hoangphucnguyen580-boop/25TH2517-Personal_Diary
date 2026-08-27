@@ -11,12 +11,21 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.view.LayoutInflater;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.FileProvider;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,10 +34,18 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.UUID;
 
 import ntu.nguyenhoangphuc.personal_diary.R;
 import ntu.nguyenhoangphuc.personal_diary.database.DiaryDatabaseHelper;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
+
+
 
 /**
  * Màn Thêm/Sửa 1 bài nhật ký - dùng CHUNG 1 Activity cho cả 2 chế độ,
@@ -49,6 +66,20 @@ public class AddEditDiaryActivity extends AppCompatActivity {
 
     // ===== View =====
     private ImageButton btnQuayLai, btnLuu, btnChiaSe, btnDocTo, btnMic, btnDoiCauGoiY, btnThemAnh;
+    private LinearLayout llDaiAnh;
+
+    private static final int SO_ANH_TOI_DA = 5;
+    private static final int KICH_THUOC_ANH_LUU = 1280;   // px - cạnh dài nhất sau khi resize
+    private static final int CHAT_LUONG_NEN_JPEG = 85;    // % chất lượng nén JPEG
+
+    // 2 launcher xử lý kết quả trả về từ Thư viện ảnh / Camera - PHẢI đăng ký ngay
+// trong onCreate (không được đăng ký bên trong onClickListener), vì Android
+// bắt buộc launcher phải sẵn sàng TRƯỚC khi Activity chạy xong onCreate
+    private ActivityResultLauncher<PickVisualMediaRequest> launcherThuVien;
+    private ActivityResultLauncher<Uri> launcherCamera;
+
+    // Giữ tham chiếu file ảnh Camera đang chụp dở, để biết xử lý file nào khi chụp xong
+    private File fileAnhCameraTam;
     private TextView tvTieuDe, tvNgayThang, tvGoiY;
     private EditText edtNoiDung, edtNhapTagMoi;
     private LinearLayout rowNgayThang;
@@ -90,6 +121,7 @@ public class AddEditDiaryActivity extends AppCompatActivity {
 
         anhXaView();
         khoiTaoGoiY();
+        khoiTaoLauncherAnh();
         ganSuKien();
 
         diaryIdDangSua = getIntent().getIntExtra(EXTRA_DIARY_ID, KHONG_CO_ID);
@@ -133,6 +165,8 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         edtNhapTagMoi = findViewById(R.id.edtNhapTagMoi);
 
         btnThemAnh = findViewById(R.id.btnThemAnh);
+
+        llDaiAnh = findViewById(R.id.llDaiAnh);
     }
 
     // Đọc string-array gợi ý viết trong strings.xml ra List cho dễ random
@@ -147,9 +181,7 @@ public class AddEditDiaryActivity extends AppCompatActivity {
 
         // 4 nút này thuộc Phần 2/3 (ảnh, giọng nói, share, TTS) - CHƯA làm ở Phần 1,
         // gắn sẵn listener rỗng để không còn bị hiểu lầm "nút tĩnh" như mày report lúc nãy
-        btnThemAnh.setOnClickListener(v -> {
-            // TODO: làm ở Phần 2 - mở bottom sheet chọn Thư viện ảnh / Chụp ảnh mới
-        });
+        btnThemAnh.setOnClickListener(v -> moBottomSheetChonNguonAnh());
         btnMic.setOnClickListener(v -> {
             // TODO: làm ở Phần 3 - RecognizerIntent, nối chữ nhận diện vào cuối edtNoiDung
         });
@@ -389,5 +421,226 @@ public class AddEditDiaryActivity extends AppCompatActivity {
     // bằng code (setChipStrokeWidth...) chỉ nhận đơn vị px, không tự hiểu "dp" như XML
     private int dpSangPx(float dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics());
+    }
+
+    // ===================== ẢNH =====================
+
+    private void khoiTaoLauncherAnh() {
+        // Photo Picker hiện đại - KHÔNG cần xin quyền đọc bộ nhớ như ACTION_PICK kiểu cũ
+        launcherThuVien = registerForActivityResult(
+                new ActivityResultContracts.PickVisualMedia(),
+                uri -> {
+                    if (uri != null) {
+                        xuLyAnhTuThuVien(uri);
+                    }
+                    // uri == null nghĩa là mày bấm back/huỷ ở màn chọn ảnh - không làm gì cả
+                });
+
+        // TakePicture() trả về boolean - true nghĩa là chụp thành công, ảnh đã được
+        // ghi vào đúng Uri mày đưa lúc gọi launcherCamera.launch(...)
+        launcherCamera = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(),
+                thanhCong -> {
+                    if (thanhCong) {
+                        xuLyAnhTuCamera();
+                    }
+                });
+    }
+
+    private void moBottomSheetChonNguonAnh() {
+        if (demSoAnhHienTai() >= SO_ANH_TOI_DA) {
+            Toast.makeText(this, "Tối đa " + SO_ANH_TOI_DA + " ảnh mỗi bài thôi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        BottomSheetDialog sheet = new BottomSheetDialog(this);
+        sheet.setContentView(R.layout.layout_bottom_sheet_chon_anh);
+
+        View llChonThuVien = sheet.findViewById(R.id.llChonThuVien);
+        View llChonMayAnh = sheet.findViewById(R.id.llChonMayAnh);
+
+        if (llChonThuVien != null) {
+            llChonThuVien.setOnClickListener(v -> {
+                sheet.dismiss();
+                moThuVienAnh();
+            });
+        }
+        if (llChonMayAnh != null) {
+            llChonMayAnh.setOnClickListener(v -> {
+                sheet.dismiss();
+                moCamera();
+            });
+        }
+
+        sheet.show();
+    }
+
+    // llDaiAnh có N item ảnh + 1 nút "+" đứng cuối -> số ảnh thật = tổng số con - 1
+    private int demSoAnhHienTai() {
+        return llDaiAnh.getChildCount() - 1;
+    }
+
+    private void moThuVienAnh() {
+        launcherThuVien.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
+    }
+
+    private void moCamera() {
+        try {
+            File thuMucTam = new File(getCacheDir(), "anh_nhat_ky_tam");
+            if (!thuMucTam.exists()) {
+                thuMucTam.mkdirs();
+            }
+            fileAnhCameraTam = File.createTempFile("camera_", ".jpg", thuMucTam);
+
+            // FileProvider "bọc" file thật thành content:// Uri - từ Android 7 trở đi,
+            // Camera app KHÔNG được phép ghi thẳng vào file:// Uri vì lý do bảo mật
+            Uri uriAnhCameraTam = FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", fileAnhCameraTam);
+
+            launcherCamera.launch(uriAnhCameraTam);
+        } catch (IOException e) {
+            Toast.makeText(this, "Không mở được Camera, thử lại nhé", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void xuLyAnhTuThuVien(Uri uri) {
+        try {
+            File fileTam = copyUriRaFileTam(uri);
+            Bitmap bitmapDaThuNho = thuNhoAnhTuFile(fileTam, KICH_THUOC_ANH_LUU);
+            fileTam.delete();
+
+            if (bitmapDaThuNho == null) {
+                Toast.makeText(this, "Không đọc được ảnh này", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String duongDanFileThat = luuBitmapThanhFileThat(bitmapDaThuNho);
+            bitmapDaThuNho.recycle();
+            themAnhVaoDai(duongDanFileThat);
+
+        } catch (IOException e) {
+            Toast.makeText(this, "Có lỗi khi xử lý ảnh, thử lại nhé", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void xuLyAnhTuCamera() {
+        if (fileAnhCameraTam == null) return;
+
+        try {
+            Bitmap bitmapDaThuNho = thuNhoAnhTuFile(fileAnhCameraTam, KICH_THUOC_ANH_LUU);
+            fileAnhCameraTam.delete();
+
+            if (bitmapDaThuNho == null) {
+                Toast.makeText(this, "Không đọc được ảnh vừa chụp", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String duongDanFileThat = luuBitmapThanhFileThat(bitmapDaThuNho);
+            bitmapDaThuNho.recycle();
+            themAnhVaoDai(duongDanFileThat);
+
+        } catch (IOException e) {
+            Toast.makeText(this, "Có lỗi khi xử lý ảnh, thử lại nhé", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Copy dữ liệu từ content:// Uri (ảnh chọn ở Thư viện) ra 1 file tạm trong cacheDir
+// - làm vậy để bước thu nhỏ tiếp theo chỉ cần biết làm việc với File thật, không
+// cần viết thêm 1 bộ code riêng để đọc trực tiếp từ Uri
+    private File copyUriRaFileTam(Uri uri) throws IOException {
+        File thuMucTam = new File(getCacheDir(), "anh_nhat_ky_tam");
+        if (!thuMucTam.exists()) {
+            thuMucTam.mkdirs();
+        }
+        File fileTam = File.createTempFile("thuvien_", ".jpg", thuMucTam);
+
+        try (InputStream inputStream = getContentResolver().openInputStream(uri);
+             OutputStream outputStream = new FileOutputStream(fileTam)) {
+            if (inputStream == null) {
+                throw new IOException("Không mở được ảnh đã chọn");
+            }
+            byte[] boDem = new byte[8192];
+            int soByteDaDoc;
+            while ((soByteDaDoc = inputStream.read(boDem)) != -1) {
+                outputStream.write(boDem, 0, soByteDaDoc);
+            }
+        }
+        return fileTam;
+    }
+
+    // Thu nhỏ ảnh theo đúng pattern 2 bước mà DiaryAdapter.giaiMaAnhGonNhe đang dùng:
+// bước 1 chỉ đọc kích thước, bước 2 mới decode thật với inSampleSize phù hợp -
+// tránh OOM (hết bộ nhớ) khi ảnh Camera gốc có thể lên tới 10-20MB
+    private Bitmap thuNhoAnhTuFile(File file, int canhDaiToiDa) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+
+        int canhDaiGoc = Math.max(options.outWidth, options.outHeight);
+        int tiLe = 1;
+        while ((canhDaiGoc / tiLe) > canhDaiToiDa) {
+            tiLe *= 2;
+        }
+
+        options.inSampleSize = tiLe;
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+    }
+
+    // Nén Bitmap thành JPEG rồi ghi xuống file thật trong bộ nhớ riêng của app
+// (getFilesDir()) - ĐÚNG quy ước bắt buộc: duong_dan_anh trong DB phải là file
+// path thật, không phải content:// Uri
+    private String luuBitmapThanhFileThat(Bitmap bitmap) throws IOException {
+        File thuMucAnh = new File(getFilesDir(), "anh_nhat_ky");
+        if (!thuMucAnh.exists()) {
+            thuMucAnh.mkdirs();
+        }
+
+        String tenFile = "anh_" + System.currentTimeMillis() + "_"
+                + UUID.randomUUID().toString().substring(0, 6) + ".jpg";
+        File fileDich = new File(thuMucAnh, tenFile);
+
+        try (OutputStream outputStream = new FileOutputStream(fileDich)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, CHAT_LUONG_NEN_JPEG, outputStream);
+        }
+
+        return fileDich.getAbsolutePath();
+    }
+
+    // Inflate item_anh_nhat_ky.xml, hiển thị ảnh, gắn nút xoá, rồi chèn vào llDaiAnh
+// NGAY TRƯỚC btnThemAnh (luôn giữ nút "+" đứng cuối dải)
+    private void themAnhVaoDai(String duongDanAnh) {
+        View itemAnh = LayoutInflater.from(this).inflate(R.layout.item_anh_nhat_ky, llDaiAnh, false);
+
+        ImageView ivAnh = itemAnh.findViewById(R.id.ivAnh);
+        ImageButton btnXoaAnh = itemAnh.findViewById(R.id.btnXoaAnh);
+
+        // Ảnh đã được thu nhỏ + nén sẵn ở bước trước nên decode trực tiếp là đủ nhanh
+        ivAnh.setImageBitmap(BitmapFactory.decodeFile(duongDanAnh));
+
+        // Gắn đường dẫn file thật lên chính View - lúc bấm "Lưu" toàn bài (Phần 2.2),
+        // tao đọc lại tag này để biết insertPhoto() ảnh nào, giống hệt cách
+        // layTagDangChon() đang đọc text từ các Chip
+        itemAnh.setTag(duongDanAnh);
+
+        btnXoaAnh.setOnClickListener(v -> {
+            llDaiAnh.removeView(itemAnh);
+            // Xoá luôn file thật khỏi máy - không xoá thì bấm thêm/xoá nhiều lần sẽ
+            // để lại rác ảnh mồ côi trong bộ nhớ app
+            new File(duongDanAnh).delete();
+            capNhatTrangThaiNutThemAnh();
+        });
+
+        int viTriChenVao = llDaiAnh.getChildCount() - 1;
+        llDaiAnh.addView(itemAnh, viTriChenVao);
+
+        capNhatTrangThaiNutThemAnh();
+    }
+
+    // Ẩn nút "+" khi đã đủ 5 ảnh, hiện lại ngay khi xoá bớt
+    private void capNhatTrangThaiNutThemAnh() {
+        btnThemAnh.setVisibility(demSoAnhHienTai() >= SO_ANH_TOI_DA ? View.GONE : View.VISIBLE);
     }
 }
