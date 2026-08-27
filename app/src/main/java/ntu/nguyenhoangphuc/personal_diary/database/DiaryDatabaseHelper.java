@@ -198,4 +198,12 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return entry;
     }
+
+    // Xoá hết ảnh cũ của 1 bài trước khi ghi lại danh sách ảnh mới - dùng khi Sửa bài,
+// đơn giản hơn nhiều so với so sánh xem ảnh nào giữ/thêm/xoá/đổi chú thích
+    public void deletePhotosForDiary(int diaryId) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TABLE_ANH_NHAT_KY, COL_NHAT_KY_ID + " = ?", new String[]{String.valueOf(diaryId)});
+        db.close();
+    }
 }

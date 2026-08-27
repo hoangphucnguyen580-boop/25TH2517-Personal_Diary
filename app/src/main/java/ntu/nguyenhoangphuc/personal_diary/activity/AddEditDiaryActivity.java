@@ -44,6 +44,7 @@ import java.util.UUID;
 import ntu.nguyenhoangphuc.personal_diary.R;
 import ntu.nguyenhoangphuc.personal_diary.database.DiaryDatabaseHelper;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
+import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
 
 
 
@@ -384,6 +385,16 @@ public class AddEditDiaryActivity extends AppCompatActivity {
                 }
             }
         }
+
+        // Tải lại dải ảnh cũ - kiểm tra file còn tồn tại không trước khi thêm vào dải,
+        // tránh hiện ảnh vỡ nếu file bị mất đâu đó ngoài ý muốn (vd mày xoá thủ công
+        // trong bộ nhớ máy, hoặc cài lại app làm mất thư mục files/anh_nhat_ky)
+        List<DiaryPhoto> danhSachAnhCu = dbHelper.getPhotosForDiary(diaryIdDangSua);
+        for (DiaryPhoto photo : danhSachAnhCu) {
+            if (new File(photo.getDuongDanAnh()).exists()) {
+                themAnhVaoDai(photo.getDuongDanAnh(), photo.getChuThich());
+            }
+        }
     }
 
     private void luuNhatKy() {
@@ -398,23 +409,55 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         }
 
         String theGan = layTagDangChon();
+        int diaryIdVuaLuu;
 
         if (diaryIdDangSua == KHONG_CO_ID) {
             // Chế độ THÊM MỚI - sinh timestamp lúc tạo bài ngay bây giờ
             String ngayTaoHienTai = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                     .format(Calendar.getInstance().getTime());
             DiaryEntry baiMoi = new DiaryEntry(ngayDaChonYyyyMMdd, noiDung, tamTrangDaChon, theGan, ngayTaoHienTai);
-            dbHelper.insertDiary(baiMoi);
+            long idMoiSinh = dbHelper.insertDiary(baiMoi);
+            diaryIdVuaLuu = (int) idMoiSinh;
         } else {
             // Chế độ SỬA - giữ nguyên ngay_tao gốc, không ghi đè thời điểm tạo bài
             DiaryEntry baiDaSua = new DiaryEntry(diaryIdDangSua, ngayDaChonYyyyMMdd, noiDung, tamTrangDaChon, theGan, ngayTaoGocDaTai);
             dbHelper.updateDiary(baiDaSua);
+            diaryIdVuaLuu = diaryIdDangSua;
+
+            // Xoá sạch ảnh cũ trước, tránh lưu trùng lặp - vì tao ghi lại TOÀN BỘ
+            // dải ảnh đang hiện trên màn hình xuống DB ở luuAnhVaoDb() bên dưới,
+            // không xoá trước thì ảnh cũ (chưa xoá) sẽ bị insert đè thêm 1 lần nữa
+            dbHelper.deletePhotosForDiary(diaryIdVuaLuu);
         }
+
+        luuAnhVaoDb(diaryIdVuaLuu);
 
         Toast.makeText(this, "Đã lưu nhật ký", Toast.LENGTH_SHORT).show();
         // setResult(RESULT_OK) báo cho màn gọi mình (HomeFragment) biết là đã lưu thành công
         setResult(RESULT_OK);
         finish();
+    }
+
+    // Đọc từng item ảnh đang hiện trên llDaiAnh (bỏ qua btnThemAnh ở cuối), lấy
+    // đường dẫn (đã setTag lúc thêm ảnh) + chú thích hiện tại trong ô edtChuThich,
+    // ghi từng cái xuống DB theo đúng thứ tự đang hiển thị (thuTu = vị trí i)
+    private void luuAnhVaoDb(int diaryId) {
+        int soAnh = demSoAnhHienTai();
+        for (int i = 0; i < soAnh; i++) {
+            View itemAnh = llDaiAnh.getChildAt(i);
+            String duongDanAnh = (String) itemAnh.getTag();
+            if (duongDanAnh == null) continue;
+
+            EditText edtChuThich = itemAnh.findViewById(R.id.edtChuThich);
+            String chuThich = edtChuThich.getText().toString().trim();
+            if (chuThich.isEmpty()) {
+                chuThich = null;
+            }
+
+            // icon để dành làm sau (Phần 2 chưa làm bộ chọn icon) nên truyền null
+            DiaryPhoto photo = new DiaryPhoto(diaryId, duongDanAnh, chuThich, null, i);
+            dbHelper.insertPhoto(photo);
+        }
     }
 
     // Đổi dp sang px - giống hệt hàm dpSangPx trong DiaryAdapter, cần vì set style Chip
@@ -611,11 +654,21 @@ public class AddEditDiaryActivity extends AppCompatActivity {
 
     // Inflate item_anh_nhat_ky.xml, hiển thị ảnh, gắn nút xoá, rồi chèn vào llDaiAnh
 // NGAY TRƯỚC btnThemAnh (luôn giữ nút "+" đứng cuối dải)
+    // Dùng khi THÊM ảnh mới (Phần 2.1) - không có chú thích cũ
     private void themAnhVaoDai(String duongDanAnh) {
+        themAnhVaoDai(duongDanAnh, null);
+    }
+
+    // Dùng khi TẢI lại ảnh cũ (chế độ Sửa) - có sẵn chú thích cũ cần điền vào
+    private void themAnhVaoDai(String duongDanAnh, String chuThichBanDau) {
         View itemAnh = LayoutInflater.from(this).inflate(R.layout.item_anh_nhat_ky, llDaiAnh, false);
 
         ImageView ivAnh = itemAnh.findViewById(R.id.ivAnh);
         ImageButton btnXoaAnh = itemAnh.findViewById(R.id.btnXoaAnh);
+        EditText edtChuThich = itemAnh.findViewById(R.id.edtChuThich);
+        if (chuThichBanDau != null) {
+            edtChuThich.setText(chuThichBanDau);
+        }
 
         // Ảnh đã được thu nhỏ + nén sẵn ở bước trước nên decode trực tiếp là đủ nhanh
         ivAnh.setImageBitmap(BitmapFactory.decodeFile(duongDanAnh));
