@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="anh_tam" path="anh_nhat_ky_tam/" />
+    <!-- MỚI: khai thư mục lưu ảnh THẬT để FileProvider cấp Uri được khi Share -->
+    <files-path name="anh_that" path="anh_nhat_ky/" />
 </paths>

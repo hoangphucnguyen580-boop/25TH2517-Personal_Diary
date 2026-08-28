@@ -29,6 +29,7 @@
 
     <string name="noi_dung_hint">Hôm nay của mày thế nào\u2026</string>
     <string name="nhap_giong_noi">Nhập nội dung bằng giọng nói</string>
+    <string name="dang_nghe">Đang nghe, bạn nói đi\u2026</string>
 
     <string name="chon_ngay">Chọn ngày</string>
     <string name="mo_chon_ngay">Chọn ngày cho nhật ký</string>
@@ -40,7 +41,7 @@
     <string name="mood_angry_label">Giận</string>
     <string name="mood_neutral_label">Trung tính</string>
 
-    <string name="goi_y_mac_dinh">Điều gì khiến mày mỉm cười hôm nay?</string>
+    <string name="goi_y_mac_dinh">Điều gì khiến bạn mỉm cười hôm nay?</string>
     <string name="doi_cau_goi_y">Đổi câu gợi ý khác</string>
 
     <string name="the_label">Thẻ</string>
@@ -57,13 +58,13 @@
     <string name="chup_anh_moi">Chụp ảnh mới</string>
 
     <string-array name="danh_sach_goi_y_viet">
-        <item>Điều gì khiến mày mỉm cười hôm nay?</item>
+        <item>Điều gì khiến bạn mỉm cười hôm nay?</item>
         <item>Hôm nay mày biết ơn điều gì nhất?</item>
         <item>Có chuyện gì làm mày căng thẳng không, viết ra cho nhẹ đầu?</item>
-        <item>Mày đã học được điều gì mới hôm nay?</item>
+        <item>Bạn đã học được điều gì mới hôm nay?</item>
         <item>Khoảnh khắc đáng nhớ nhất hôm nay của mày là lúc nào?</item>
-        <item>Có ai hôm nay khiến mày thấy vui hoặc dễ chịu không?</item>
-        <item>Mày muốn ngày mai của mình khác gì so với hôm nay?</item>
+        <item>Có ai hôm nay khiến bạn thấy vui hoặc dễ chịu không?</item>
+        <item>Bạn muốn ngày mai của mình khác gì so với hôm nay?</item>
     </string-array>
 
     <string name="dong_xem_anh">Đóng xem ảnh</string>

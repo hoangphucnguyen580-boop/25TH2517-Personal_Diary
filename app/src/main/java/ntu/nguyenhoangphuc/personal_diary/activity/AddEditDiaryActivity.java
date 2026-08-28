@@ -1,7 +1,11 @@
 package ntu.nguyenhoangphuc.personal_diary.activity;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -53,8 +57,9 @@ import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
  * Màn Thêm/Sửa 1 bài nhật ký - dùng CHUNG 1 Activity cho cả 2 chế độ,
  * phân biệt bằng có truyền EXTRA_DIARY_ID qua Intent hay không.
  *
- * PHẦN 1 (đang viết): nội dung, ngày, mood, gợi ý viết, tag, lưu/tải DB.
- * CHƯA LÀM (Phần 3): giọng nói, share, TTS - 3 nút đó vẫn gắn listener rỗng.
+ * PHẦN 1: nội dung, ngày, mood, gợi ý viết, tag, lưu/tải DB.
+ * PHẦN 2: ảnh (thêm/xoá/chú thích/xem phóng to).
+ * PHẦN 3: giọng nói (RecognizerIntent), chia sẻ (ACTION_SEND), đọc to (TTS).
  */
 public class AddEditDiaryActivity extends AppCompatActivity {
 
@@ -81,6 +86,18 @@ public class AddEditDiaryActivity extends AppCompatActivity {
 
     // Giữ tham chiếu file ảnh Camera đang chụp dở, để biết xử lý file nào khi chụp xong
     private File fileAnhCameraTam;
+
+    // Launcher mở màn nhận diện giọng nói của hệ thống (Google App), nhận lại
+    // chữ đã nhận diện qua onActivityResult kiểu mới (ActivityResultContracts)
+    private ActivityResultLauncher<Intent> launcherGiongNoi;
+
+    // Engine đọc to (TTS) - khởi tạo 1 lần trong onCreate, dùng lại xuyên suốt vòng
+    // đời Activity, PHẢI shutdown() ở onDestroy() để không rò rỉ bộ nhớ
+    private TextToSpeech ttsEngine;
+
+    // Đang đọc hay không - dùng để bấm lại icon loa thì DỪNG thay vì đọc lại từ đầu
+    private boolean dangDocTo = false;
+
     private TextView tvTieuDe, tvNgayThang, tvGoiY;
     private EditText edtNoiDung, edtNhapTagMoi;
     private LinearLayout rowNgayThang;
@@ -123,6 +140,8 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         anhXaView();
         khoiTaoGoiY();
         khoiTaoLauncherAnh();
+        khoiTaoLauncherGiongNoi();   // MỚI
+        khoiTaoTTS();                // MỚI
         ganSuKien();
 
         diaryIdDangSua = getIntent().getIntExtra(EXTRA_DIARY_ID, KHONG_CO_ID);
@@ -180,18 +199,12 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         btnQuayLai.setOnClickListener(v -> finish());
         btnLuu.setOnClickListener(v -> luuNhatKy());
 
-        // 4 nút này thuộc Phần 2/3 (ảnh, giọng nói, share, TTS) - CHƯA làm ở Phần 1,
-        // gắn sẵn listener rỗng để không còn bị hiểu lầm "nút tĩnh" như mày report lúc nãy
         btnThemAnh.setOnClickListener(v -> moBottomSheetChonNguonAnh());
-        btnMic.setOnClickListener(v -> {
-            // TODO: làm ở Phần 3 - RecognizerIntent, nối chữ nhận diện vào cuối edtNoiDung
-        });
-        btnChiaSe.setOnClickListener(v -> {
-            // TODO: làm ở Phần 3 - Intent.ACTION_SEND chia sẻ nội dung bài viết
-        });
-        btnDocTo.setOnClickListener(v -> {
-            // TODO: làm ở Phần 3 - TextToSpeech đọc nội dung edtNoiDung
-        });
+
+        // Phần 3: giọng nói, share, TTS - đã làm xong, không còn là listener rỗng nữa
+        btnMic.setOnClickListener(v -> moNhanDienGiongNoi());
+        btnChiaSe.setOnClickListener(v -> chiaSeNhatKy());
+        btnDocTo.setOnClickListener(v -> xuLyBamDocTo());
 
         rowNgayThang.setOnClickListener(v -> moChonNgay());
 
@@ -350,6 +363,182 @@ public class AddEditDiaryActivity extends AppCompatActivity {
             }
         }
         return ketQua.length() > 0 ? ketQua.toString() : null;
+    }
+
+    // ===================== GIỌNG NÓI (Phần 3) =====================
+
+    private void khoiTaoLauncherGiongNoi() {
+        launcherGiongNoi = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                ketQua -> {
+                    if (ketQua.getResultCode() == RESULT_OK && ketQua.getData() != null) {
+                        ArrayList<String> danhSachKetQua = ketQua.getData()
+                                .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                        // Google trả về NHIỀU phương án đoán, lấy phương án đầu tiên
+                        // (độ tin cậy cao nhất) là đủ dùng cho app này
+                        if (danhSachKetQua != null && !danhSachKetQua.isEmpty()) {
+                            noiChuVaoNoiDung(danhSachKetQua.get(0));
+                        }
+                    }
+                    // ketQua.getResultCode() != RESULT_OK nghĩa là mày bấm back/huỷ -
+                    // không làm gì cả, không crash
+                });
+    }
+
+    private void moNhanDienGiongNoi() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        // Cố định tiếng Việt - KHÔNG phụ thuộc ngôn ngữ mặc định máy đang cài
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.dang_nghe));
+
+        // Kiểm tra máy có app nào xử lý được Intent này không - tránh crash
+        // ActivityNotFoundException trên máy không cài Google App (hiếm nhưng có)
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            launcherGiongNoi.launch(intent);
+        } else {
+            Toast.makeText(this, "Máy không hỗ trợ nhận diện giọng nói", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Nối chữ mới nhận được vào CUỐI nội dung đang gõ, có dấu cách ngăn cách nếu
+    // nội dung cũ không rỗng - tránh dính liền chữ cũ với chữ mới thành 1 từ
+    private void noiChuVaoNoiDung(String chuMoiNhanDuoc) {
+        String noiDungHienTai = edtNoiDung.getText().toString();
+        if (noiDungHienTai.trim().isEmpty()) {
+            edtNoiDung.setText(chuMoiNhanDuoc);
+        } else {
+            edtNoiDung.setText(noiDungHienTai + " " + chuMoiNhanDuoc);
+        }
+        // Đưa con trỏ về cuối để mày gõ tiếp ngay được, không cần bấm lại vào ô
+        edtNoiDung.setSelection(edtNoiDung.getText().length());
+    }
+
+    // ===================== ĐỌC TO - TTS (Phần 3) =====================
+
+    private void khoiTaoTTS() {
+        ttsEngine = new TextToSpeech(this, trangThaiKhoiTao -> {
+            if (trangThaiKhoiTao == TextToSpeech.SUCCESS) {
+                int ketQuaNgonNgu = ttsEngine.setLanguage(new Locale("vi", "VN"));
+                if (ketQuaNgonNgu == TextToSpeech.LANG_MISSING_DATA
+                        || ketQuaNgonNgu == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Toast.makeText(this,
+                            "Máy chưa cài gói giọng đọc tiếng Việt - vào Cài đặt máy để tải thêm",
+                            Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(this, "Không khởi tạo được chức năng đọc to", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Lắng nghe lúc đọc XONG (hoặc lỗi) để tự trả dangDocTo về false - callback
+        // này chạy trên luồng phụ của TTS, PHẢI runOnUiThread mới sửa biến an toàn
+        // và đụng vào View được (dù ở đây chỉ sửa biến boolean, vẫn nên làm đúng chuẩn)
+        ttsEngine.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+            @Override
+            public void onStart(String utteranceId) {
+                // Không cần làm gì lúc bắt đầu đọc
+            }
+
+            @Override
+            public void onDone(String utteranceId) {
+                runOnUiThread(() -> dangDocTo = false);
+            }
+
+            @Override
+            public void onError(String utteranceId) {
+                runOnUiThread(() -> dangDocTo = false);
+            }
+        });
+    }
+
+    // Bấm 1 lần: bắt đầu đọc. Bấm lại LẦN NỮA khi đang đọc: DỪNG giữa chừng
+    // (đúng yêu cầu mày chọn, cùng 1 icon loa, không cần đổi hình icon)
+    private void xuLyBamDocTo() {
+        if (dangDocTo) {
+            ttsEngine.stop();
+            dangDocTo = false;
+            return;
+        }
+
+        String noiDung = edtNoiDung.getText().toString().trim();
+        if (noiDung.isEmpty()) {
+            Toast.makeText(this, "Chưa có nội dung để đọc", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        dangDocTo = true;
+        // QUEUE_FLUSH = huỷ hàng đợi đọc cũ (nếu có) rồi đọc câu mới ngay lập tức,
+        // tránh bị đọc chồng chéo nếu mày lỡ bấm liên tục nhiều lần
+        ttsEngine.speak(noiDung, TextToSpeech.QUEUE_FLUSH, null, "doc_nhat_ky");
+    }
+
+    // ===================== CHIA SẺ (Phần 3) =====================
+
+    private void chiaSeNhatKy() {
+        String noiDung = edtNoiDung.getText().toString().trim();
+        if (noiDung.isEmpty()) {
+            Toast.makeText(this, "Chưa có nội dung để chia sẻ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String textDeChiaSe = taoNoiDungChiaSe(noiDung);
+        ArrayList<Uri> danhSachUriAnh = layDanhSachUriAnhDeChiaSe();
+
+        Intent intentChiaSe;
+        if (danhSachUriAnh.isEmpty()) {
+            // Không có ảnh -> share text đơn giản
+            intentChiaSe = new Intent(Intent.ACTION_SEND);
+            intentChiaSe.setType("text/plain");
+            intentChiaSe.putExtra(Intent.EXTRA_TEXT, textDeChiaSe);
+        } else {
+            // Có ảnh -> share NHIỀU item cùng lúc (text + toàn bộ ảnh trong bài)
+            intentChiaSe = new Intent(Intent.ACTION_SEND_MULTIPLE);
+            intentChiaSe.setType("image/*");
+            intentChiaSe.putExtra(Intent.EXTRA_TEXT, textDeChiaSe);
+            intentChiaSe.putParcelableArrayListExtra(Intent.EXTRA_STREAM, danhSachUriAnh);
+            // Cấp quyền đọc file tạm thời cho app nhận share - bắt buộc vì
+            // duong_dan_anh là content:// Uri riêng của app mình, app khác không
+            // tự đọc được nếu thiếu dòng này
+            intentChiaSe.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+
+        startActivity(Intent.createChooser(intentChiaSe, getString(R.string.chia_se_nhat_ky)));
+    }
+
+    // Gộp ngày + nội dung thành 1 đoạn text để share - để đơn giản, CHƯA gộp
+    // mood/tag vào đây, báo tao nếu mày muốn thêm
+    private String taoNoiDungChiaSe(String noiDung) {
+        StringBuilder ketQua = new StringBuilder();
+        if (ngayDaChonYyyyMMdd != null) {
+            try {
+                ketQua.append(dinhDangHienThi.format(dinhDangLuu.parse(ngayDaChonYyyyMMdd))).append("\n\n");
+            } catch (ParseException e) {
+                // Parse lỗi thì bỏ qua ngày, vẫn share được nội dung bình thường
+            }
+        }
+        ketQua.append(noiDung);
+        return ketQua.toString();
+    }
+
+    // Đọc từng ảnh đang hiện trên llDaiAnh (giống hệt cách moXemAnhPhongTo() đang
+    // đọc), bọc mỗi đường dẫn file thật thành content:// Uri qua FileProvider
+    private ArrayList<Uri> layDanhSachUriAnhDeChiaSe() {
+        ArrayList<Uri> danhSachUri = new ArrayList<>();
+        int soAnh = demSoAnhHienTai();
+
+        for (int i = 0; i < soAnh; i++) {
+            View itemAnh = llDaiAnh.getChildAt(i);
+            String duongDan = (String) itemAnh.getTag();
+            if (duongDan == null) continue;
+
+            File fileAnh = new File(duongDan);
+            if (!fileAnh.exists()) continue; // ảnh bị mất file thì bỏ qua, không crash
+
+            Uri uriAnh = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", fileAnh);
+            danhSachUri.add(uriAnh);
+        }
+        return danhSachUri;
     }
 
     // ===================== LƯU / TẢI DB =====================
@@ -729,5 +918,16 @@ public class AddEditDiaryActivity extends AppCompatActivity {
     // Ẩn nút "+" khi đã đủ 5 ảnh, hiện lại ngay khi xoá bớt
     private void capNhatTrangThaiNutThemAnh() {
         btnThemAnh.setVisibility(demSoAnhHienTai() >= SO_ANH_TOI_DA ? View.GONE : View.VISIBLE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // BẮT BUỘC shutdown TTS khi Activity bị huỷ, không thì rò rỉ tài nguyên
+        // hệ thống (native resource của engine đọc, không tự Garbage Collector dọn được)
+        if (ttsEngine != null) {
+            ttsEngine.stop();
+            ttsEngine.shutdown();
+        }
     }
 }
