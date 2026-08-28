@@ -29,6 +29,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
@@ -53,8 +54,7 @@ import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
  * phân biệt bằng có truyền EXTRA_DIARY_ID qua Intent hay không.
  *
  * PHẦN 1 (đang viết): nội dung, ngày, mood, gợi ý viết, tag, lưu/tải DB.
- * CHƯA LÀM (Phần 2, 3): ảnh, giọng nói, share, TTS - 4 nút đó đã gắn sẵn
- * OnClickListener rỗng (TODO) để không còn bị hiểu lầm "nút tĩnh".
+ * CHƯA LÀM (Phần 3): giọng nói, share, TTS - 3 nút đó vẫn gắn listener rỗng.
  */
 public class AddEditDiaryActivity extends AppCompatActivity {
 
@@ -673,6 +673,9 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         // Ảnh đã được thu nhỏ + nén sẵn ở bước trước nên decode trực tiếp là đủ nhanh
         ivAnh.setImageBitmap(BitmapFactory.decodeFile(duongDanAnh));
 
+        // Bấm vào ảnh -> mở PhotoViewerDialog xem phóng to (Phần 2.3)
+        ivAnh.setOnClickListener(v -> moXemAnhPhongTo(itemAnh));
+
         // Gắn đường dẫn file thật lên chính View - lúc bấm "Lưu" toàn bài (Phần 2.2),
         // tao đọc lại tag này để biết insertPhoto() ảnh nào, giống hệt cách
         // layTagDangChon() đang đọc text từ các Chip
@@ -690,6 +693,37 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         llDaiAnh.addView(itemAnh, viTriChenVao);
 
         capNhatTrangThaiNutThemAnh();
+    }
+
+    // ===================== XEM ẢNH PHÓNG TO (Phần 2.3) =====================
+
+    // Bấm vào 1 ảnh trong dải ảnh -> mở PhotoViewerDialog xem phóng to, cho phép
+    // pinch-zoom + vuốt qua các ảnh khác trong CÙNG bài đang soạn (kể cả ảnh mới
+    // vừa thêm, chưa lưu xuống DB - vì đọc trực tiếp từ llDaiAnh đang hiện trên
+    // màn hình, không đọc từ DB)
+    private void moXemAnhPhongTo(View itemAnhDuocBam) {
+        List<String> danhSachDuongDan = new ArrayList<>();
+        List<String> danhSachChuThich = new ArrayList<>();
+        int viTriBanDau = 0;
+
+        int soAnh = demSoAnhHienTai();
+        for (int i = 0; i < soAnh; i++) {
+            View itemAnh = llDaiAnh.getChildAt(i);
+
+            String duongDan = (String) itemAnh.getTag();
+            danhSachDuongDan.add(duongDan);
+
+            EditText edtChuThichCuaAnhNay = itemAnh.findViewById(R.id.edtChuThich);
+            String chuThich = edtChuThichCuaAnhNay.getText().toString().trim();
+            danhSachChuThich.add(chuThich.isEmpty() ? null : chuThich);
+
+            if (itemAnh == itemAnhDuocBam) {
+                viTriBanDau = i;
+            }
+        }
+
+        PhotoViewerDialog dialog = new PhotoViewerDialog(this, danhSachDuongDan, danhSachChuThich, viTriBanDau);
+        dialog.show();
     }
 
     // Ẩn nút "+" khi đã đủ 5 ảnh, hiện lại ngay khi xoá bớt
