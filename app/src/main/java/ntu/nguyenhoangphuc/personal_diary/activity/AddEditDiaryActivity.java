@@ -1,6 +1,9 @@
 package ntu.nguyenhoangphuc.personal_diary.activity;
 
 import android.app.DatePickerDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -140,8 +143,8 @@ public class AddEditDiaryActivity extends AppCompatActivity {
         anhXaView();
         khoiTaoGoiY();
         khoiTaoLauncherAnh();
-        khoiTaoLauncherGiongNoi();   // MỚI
-        khoiTaoTTS();                // MỚI
+        khoiTaoLauncherGiongNoi();
+        khoiTaoTTS();
         ganSuKien();
 
         diaryIdDangSua = getIntent().getIntExtra(EXTRA_DIARY_ID, KHONG_CO_ID);
@@ -487,7 +490,7 @@ public class AddEditDiaryActivity extends AppCompatActivity {
 
         Intent intentChiaSe;
         if (danhSachUriAnh.isEmpty()) {
-            // Không có ảnh -> share text đơn giản
+            // Không có ảnh -> share text đơn giản, hầu hết app đều hiện đúng chữ
             intentChiaSe = new Intent(Intent.ACTION_SEND);
             intentChiaSe.setType("text/plain");
             intentChiaSe.putExtra(Intent.EXTRA_TEXT, textDeChiaSe);
@@ -501,24 +504,75 @@ public class AddEditDiaryActivity extends AppCompatActivity {
             // duong_dan_anh là content:// Uri riêng của app mình, app khác không
             // tự đọc được nếu thiếu dòng này
             intentChiaSe.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            // SỬA: nhiều app (Messenger, Zalo,...) khi nhận ACTION_SEND_MULTIPLE kèm
+            // ảnh sẽ tự bỏ qua EXTRA_TEXT - hạn chế phía app nhận, không sửa được
+            // từ code app mình. Copy sẵn nội dung vào clipboard làm lưới an toàn.
+            copyNoiDungVaoClipboard(textDeChiaSe);
+            Toast.makeText(this,
+                    "Đã copy nội dung vào bộ nhớ tạm - dán thêm nếu ứng dụng không tự hiện chữ",
+                    Toast.LENGTH_LONG).show();
         }
 
         startActivity(Intent.createChooser(intentChiaSe, getString(R.string.chia_se_nhat_ky)));
     }
 
-    // Gộp ngày + nội dung thành 1 đoạn text để share - để đơn giản, CHƯA gộp
-    // mood/tag vào đây, báo tao nếu mày muốn thêm
+    // SỬA: bổ sung tâm trạng + thẻ vào nội dung share (trước đây thiếu, làm mất
+    // thông tin mày đã chọn khi bấm Share)
     private String taoNoiDungChiaSe(String noiDung) {
-        StringBuilder ketQua = new StringBuilder();
+        StringBuilder phanDauBai = new StringBuilder();
+
         if (ngayDaChonYyyyMMdd != null) {
             try {
-                ketQua.append(dinhDangHienThi.format(dinhDangLuu.parse(ngayDaChonYyyyMMdd))).append("\n\n");
+                phanDauBai.append(dinhDangHienThi.format(dinhDangLuu.parse(ngayDaChonYyyyMMdd)));
             } catch (ParseException e) {
                 // Parse lỗi thì bỏ qua ngày, vẫn share được nội dung bình thường
             }
         }
-        ketQua.append(noiDung);
-        return ketQua.toString();
+
+        if (tamTrangDaChon != null) {
+            if (phanDauBai.length() > 0) phanDauBai.append("\n");
+            phanDauBai.append("Tâm trạng: ").append(nhanTenMoodTheoMa(tamTrangDaChon));
+        }
+
+        String tagDangChon = layTagDangChon();
+        if (tagDangChon != null) {
+            if (phanDauBai.length() > 0) phanDauBai.append("\n");
+            phanDauBai.append("Thẻ: ").append(tagDangChon.replace(",", ", "));
+        }
+
+        if (phanDauBai.length() > 0) {
+            return phanDauBai + "\n\n" + noiDung;
+        }
+        return noiDung;
+    }
+
+    // MỚI - đổi mã mood ("happy"/"calm"/...) thành tên tiếng Việt để hiện ra khi
+    // share, dùng lại đúng string resource có sẵn (mood_happy_label,...) thay vì
+    // viết cứng chữ trong Java - đồng bộ với cách file khác trong app đang làm
+    private String nhanTenMoodTheoMa(String maMood) {
+        switch (maMood) {
+            case "happy":
+                return getString(R.string.mood_happy_label);
+            case "calm":
+                return getString(R.string.mood_calm_label);
+            case "sad":
+                return getString(R.string.mood_sad_label);
+            case "angry":
+                return getString(R.string.mood_angry_label);
+            case "neutral":
+            default:
+                return getString(R.string.mood_neutral_label);
+        }
+    }
+
+    // MỚI - copy đoạn text vào clipboard hệ thống, dùng làm lưới an toàn cho case
+    // share kèm ảnh (xem giải thích ở chiaSeNhatKy())
+    private void copyNoiDungVaoClipboard(String noiDung) {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(ClipData.newPlainText("Nhật ký", noiDung));
+        }
     }
 
     // Đọc từng ảnh đang hiện trên llDaiAnh (giống hệt cách moXemAnhPhongTo() đang
