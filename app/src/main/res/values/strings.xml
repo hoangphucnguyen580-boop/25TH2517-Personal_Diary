@@ -77,4 +77,12 @@
     <string name="ap_dung">Áp dụng</string>
 
     <string name="dong_xem_anh">Đóng xem ảnh</string>
+
+    <!-- ===== Bổ sung cho HomeFragment (xuất .txt + sắp xếp) ===== -->
+    <string name="xuat_file_txt">Xuất nhật ký ra file .txt</string>
+    <string name="khong_co_bai_de_xuat">Bạn chưa có bài nhật ký nào để xuất</string>
+    <string name="loi_khi_xuat_file">Có lỗi khi tạo file, thử lại nhé</string>
+    <string name="sap_xep_tieu_de">Sắp xếp theo</string>
+    <string name="sap_xep_moi_nhat_truoc">Mới nhất trước</string>
+    <string name="sap_xep_cu_nhat_truoc">Cũ nhất trước</string>
 </resources>

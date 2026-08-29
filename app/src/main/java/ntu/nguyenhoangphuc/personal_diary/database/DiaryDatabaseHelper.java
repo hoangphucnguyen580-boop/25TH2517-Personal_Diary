@@ -361,7 +361,11 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
     // theo thẻ (OR - chỉ cần trùng ÍT NHẤT 1 thẻ trong danh sách đang lọc, theo
     // đúng quyết định mày chọn). Lọc bằng Java thay vì SQL để tự xử lý bỏ dấu
     // tiếng Việt cho chuẩn - SQLite không có sẵn collation tiếng Việt.
-    public List<DiaryEntry> timKiemVaLoc(String tuKhoaTimKiem, List<String> danhSachTheDangLoc) {
+    // MỚI - thêm tham số moiNhatTruoc để hỗ trợ tính năng Sắp xếp ở menu ⋮.
+    // getAllDiaries() bên trong đã ORDER BY ngay_thang DESC sẵn (tức mới nhất
+    // trước), nên khi moiNhatTruoc=true thì KHÔNG cần sort thêm gì cả - chỉ khi
+    // mày chọn "Cũ nhất trước" mới cần đảo ngược lại.
+    public List<DiaryEntry> timKiemVaLoc(String tuKhoaTimKiem, List<String> danhSachTheDangLoc, boolean moiNhatTruoc) {
         List<DiaryEntry> tatCaBaiViet = getAllDiaries();
         List<DiaryEntry> ketQua = new ArrayList<>();
 
@@ -378,6 +382,14 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
                 ketQua.add(bai);
             }
         }
+
+        // ngay_thang lưu dạng chuỗi "yyyy-MM-dd" nên so sánh trực tiếp bằng
+        // compareTo() (kiểu so sánh chữ cái) vẫn cho đúng thứ tự thời gian -
+        // không cần parse ra Date/Calendar cho phức tạp
+        if (!moiNhatTruoc) {
+            Collections.sort(ketQua, (baiA, baiB) -> baiA.getNgayThang().compareTo(baiB.getNgayThang()));
+        }
+
         return ketQua;
     }
 

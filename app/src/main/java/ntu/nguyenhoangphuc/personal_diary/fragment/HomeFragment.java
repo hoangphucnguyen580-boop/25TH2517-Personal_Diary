@@ -2,6 +2,7 @@ package ntu.nguyenhoangphuc.personal_diary.fragment;
 
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -16,7 +17,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,9 +31,14 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 import ntu.nguyenhoangphuc.personal_diary.R;
 import ntu.nguyenhoangphuc.personal_diary.adapter.DiaryAdapter;
@@ -61,6 +69,12 @@ public class HomeFragment extends Fragment {
     // mỗi lần bấm Áp dụng lọc trong bottom sheet.
     private final List<String> danhSachTheDangLoc = new ArrayList<>();
 
+    // MỚI - true = mới nhất trước (mặc định, khớp đúng hành vi cũ trước khi có
+    // tính năng Sắp xếp), false = cũ nhất trước. Giữ ở field vì cần dùng lại
+    // mỗi lần apDungTimKiemVaLoc() được gọi, giống hệt cách danhSachTheDangLoc
+    // đang được giữ cho bộ lọc thẻ
+    private boolean sapXepMoiNhatTruoc = true;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -78,10 +92,10 @@ public class HomeFragment extends Fragment {
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_export_txt) {
-                // TODO: gọi hàm xuất file .txt khi tới lượt làm tính năng này
+                xuatFileTxt();
                 return true;
             } else if (id == R.id.action_sort) {
-                // TODO: hiện menu chọn kiểu sắp xếp khi tới lượt làm tính năng này
+                moDialogSapXep();
                 return true;
             } else if (id == R.id.action_loc_tag) {
                 moBottomSheetLocTag();
@@ -161,8 +175,145 @@ public class HomeFragment extends Fragment {
     private void apDungTimKiemVaLoc() {
         if (adapter == null || dbHelper == null) return;
         String tuKhoa = editSearch.getText().toString();
-        List<DiaryEntry> ketQua = dbHelper.timKiemVaLoc(tuKhoa, danhSachTheDangLoc);
+        List<DiaryEntry> ketQua = dbHelper.timKiemVaLoc(tuKhoa, danhSachTheDangLoc, sapXepMoiNhatTruoc);
         adapter.capNhatDanhSach(ketQua);
+    }
+
+    // ===================== XUẤT FILE .TXT (MỚI) =====================
+
+    // Xuất TOÀN BỘ nhật ký (KHÔNG theo bộ tìm kiếm/lọc đang áp dụng - đã chốt
+    // với mày là xuất hết để tránh hiểu lầm "tưởng đã backup hết" trong khi
+    // đang lọc dở 1 thẻ nào đó), rồi mở share intent để mày chọn nơi lưu/gửi -
+    // tận dụng lại đúng pattern FileProvider + ACTION_SEND đã dùng cho chia sẻ
+    // ảnh/nội dung trong AddEditDiaryActivity, không cần xin thêm quyền lưu trữ
+    private void xuatFileTxt() {
+        List<DiaryEntry> tatCaBaiViet = dbHelper.getAllDiaries();
+
+        if (tatCaBaiViet.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.khong_co_bai_de_xuat, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String noiDungFile = taoNoiDungFileTxt(tatCaBaiViet);
+
+        try {
+            File fileTxt = ghiNoiDungRaFileTxt(noiDungFile);
+            Uri uriFile = FileProvider.getUriForFile(requireContext(),
+                    requireContext().getPackageName() + ".fileprovider", fileTxt);
+
+            Intent intentChiaSe = new Intent(Intent.ACTION_SEND);
+            intentChiaSe.setType("text/plain");
+            intentChiaSe.putExtra(Intent.EXTRA_STREAM, uriFile);
+            // Cấp quyền đọc file tạm thời cho app nhận share - giống hệt lý do
+            // đã giải thích ở chiaSeNhatKy() bên AddEditDiaryActivity
+            intentChiaSe.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            startActivity(Intent.createChooser(intentChiaSe, getString(R.string.xuat_file_txt)));
+
+        } catch (IOException e) {
+            Toast.makeText(requireContext(), R.string.loi_khi_xuat_file, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Ghép tất cả bài viết thành 1 đoạn text dài, mỗi bài có ngày/tâm trạng/thẻ/
+    // nội dung, phân cách rõ ràng bằng 1 dòng gạch ngang cho dễ đọc khi mở file
+    private String taoNoiDungFileTxt(List<DiaryEntry> danhSachBai) {
+        SimpleDateFormat dinhDangLuu = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dinhDangHienThi = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+        StringBuilder noiDung = new StringBuilder();
+        noiDung.append("NHẬT KÝ CÁ NHÂN\n");
+        noiDung.append("Xuất ngày: ").append(dinhDangHienThi.format(Calendar.getInstance().getTime())).append("\n");
+        noiDung.append("Tổng số bài: ").append(danhSachBai.size()).append("\n");
+        noiDung.append("========================================\n\n");
+
+        for (DiaryEntry bai : danhSachBai) {
+            String ngayHienThi;
+            try {
+                ngayHienThi = dinhDangHienThi.format(dinhDangLuu.parse(bai.getNgayThang()));
+            } catch (ParseException e) {
+                ngayHienThi = bai.getNgayThang();
+            }
+
+            noiDung.append("Ngày: ").append(ngayHienThi).append("\n");
+
+            if (bai.getTamTrang() != null && !bai.getTamTrang().isEmpty()) {
+                noiDung.append("Tâm trạng: ").append(tenMoodTheoMa(bai.getTamTrang())).append("\n");
+            }
+
+            if (bai.getTheGan() != null && !bai.getTheGan().trim().isEmpty()) {
+                noiDung.append("Thẻ: ").append(bai.getTheGan().replace(",", ", ")).append("\n");
+            }
+
+            noiDung.append("\n").append(bai.getNoiDung()).append("\n");
+            noiDung.append("\n----------------------------------------\n\n");
+        }
+
+        return noiDung.toString();
+    }
+
+    // Đổi mã mood ("happy"/"calm"/...) thành tên tiếng Việt - giống hệt cách
+    // AddEditDiaryActivity.nhanTenMoodTheoMa() đang làm. Viết lại riêng ở đây vì
+    // 2 class không kế thừa chung, để tránh phải tạo thêm 1 class Util mới chỉ
+    // cho 1 hàm nhỏ này (có thể gom lại sau nếu mày thấy trùng lặp nhiều quá)
+    private String tenMoodTheoMa(String maMood) {
+        switch (maMood) {
+            case "happy":
+                return getString(R.string.mood_happy_label);
+            case "calm":
+                return getString(R.string.mood_calm_label);
+            case "sad":
+                return getString(R.string.mood_sad_label);
+            case "angry":
+                return getString(R.string.mood_angry_label);
+            case "neutral":
+            default:
+                return getString(R.string.mood_neutral_label);
+        }
+    }
+
+    // Ghi nội dung xuống file .txt trong cacheDir - dùng cache vì file này chỉ
+    // để share tạm thời, không cần giữ mãi (giống hệt cách ảnh chụp Camera tạm
+    // đang được xử lý trong AddEditDiaryActivity). Tên file có timestamp để mở
+    // xuất nhiều lần không bị đè lên nhau.
+    private File ghiNoiDungRaFileTxt(String noiDung) throws IOException {
+        File thuMucXuat = new File(requireContext().getCacheDir(), "xuat_nhat_ky");
+        if (!thuMucXuat.exists()) {
+            thuMucXuat.mkdirs();
+        }
+
+        String tenFile = "nhat_ky_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+                .format(Calendar.getInstance().getTime()) + ".txt";
+        File fileTxt = new File(thuMucXuat, tenFile);
+
+        try (FileWriter writer = new FileWriter(fileTxt)) {
+            writer.write(noiDung);
+        }
+
+        return fileTxt;
+    }
+
+    // ===================== SẮP XẾP (MỚI) =====================
+
+    // AlertDialog kiểu radio 2 lựa chọn - bấm chọn 1 cái là áp dụng ngay + đóng
+    // dialog luôn, không cần thêm nút "OK" riêng cho gọn. Khác với BottomSheet
+    // lọc thẻ (cho chọn NHIỀU thẻ cùng lúc nên cần nút Áp dụng riêng), đây chỉ
+    // chọn 1 trong 2 nên chọn phát là xong ngay.
+    private void moDialogSapXep() {
+        String[] luaChon = {
+                getString(R.string.sap_xep_moi_nhat_truoc),
+                getString(R.string.sap_xep_cu_nhat_truoc)
+        };
+        int viTriDangChon = sapXepMoiNhatTruoc ? 0 : 1;
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.sap_xep_tieu_de)
+                .setSingleChoiceItems(luaChon, viTriDangChon, (dialog, viTriMoiChon) -> {
+                    sapXepMoiNhatTruoc = (viTriMoiChon == 0);
+                    apDungTimKiemVaLoc();
+                    dialog.dismiss();
+                })
+                .show();
     }
 
     // ===================== LỌC THEO THẺ (MỚI) =====================
