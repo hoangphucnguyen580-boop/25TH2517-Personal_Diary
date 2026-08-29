@@ -12,4 +12,9 @@
         android:title="Sắp xếp"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_loc_tag"
+        android:title="@string/loc_theo_the_tieu_de"
+        app:showAsAction="never" />
+
 </menu>

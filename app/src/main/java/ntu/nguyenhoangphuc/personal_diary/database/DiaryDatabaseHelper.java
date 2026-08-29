@@ -6,8 +6,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.text.Normalizer;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
@@ -200,10 +206,202 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
     }
 
     // Xoá hết ảnh cũ của 1 bài trước khi ghi lại danh sách ảnh mới - dùng khi Sửa bài,
-// đơn giản hơn nhiều so với so sánh xem ảnh nào giữ/thêm/xoá/đổi chú thích
+    // đơn giản hơn nhiều so với so sánh xem ảnh nào giữ/thêm/xoá/đổi chú thích
     public void deletePhotosForDiary(int diaryId) {
         SQLiteDatabase db = getWritableDatabase();
         db.delete(TABLE_ANH_NHAT_KY, COL_NHAT_KY_ID + " = ?", new String[]{String.valueOf(diaryId)});
         db.close();
+    }
+
+    // ===================== STREAK =====================
+
+    // Tính số ngày liên tiếp GẦN NHẤT có ít nhất 1 bài nhật ký, cho phép "khoan"
+    // đúng 1 ngày - nếu bài gần nhất là HÔM QUA (chưa kịp viết hôm nay) vẫn tính
+    // là còn streak, giống cách nhiều app streak khác (Duolingo,...) đang làm.
+    // Nếu bài gần nhất cũ hơn hôm qua -> streak coi như đã đứt, trả về 0.
+    // (Mày đã xác nhận CHỐT giữ nguyên cơ chế khoan này, không đổi sang strict.)
+    public int tinhSoNgayStreak() {
+        List<String> danhSachNgay = layDanhSachNgayCoBaiVietDuyNhat();
+        if (danhSachNgay.isEmpty()) {
+            return 0;
+        }
+
+        SimpleDateFormat dinhDangLuu = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        Calendar homNay = Calendar.getInstance();
+        ganVeDauNgay(homNay);
+
+        Calendar ngayDangXet;
+        try {
+            ngayDangXet = Calendar.getInstance();
+            ngayDangXet.setTime(dinhDangLuu.parse(danhSachNgay.get(0)));
+            ganVeDauNgay(ngayDangXet);
+        } catch (ParseException e) {
+            return 0;
+        }
+
+        if (soNgayGiuaHaiMoc(ngayDangXet, homNay) > 1) {
+            return 0;
+        }
+
+        int streak = 1;
+        for (int i = 1; i < danhSachNgay.size(); i++) {
+            Calendar ngayTiepTheo;
+            try {
+                ngayTiepTheo = Calendar.getInstance();
+                ngayTiepTheo.setTime(dinhDangLuu.parse(danhSachNgay.get(i)));
+                ganVeDauNgay(ngayTiepTheo);
+            } catch (ParseException e) {
+                break;
+            }
+
+            if (soNgayGiuaHaiMoc(ngayTiepTheo, ngayDangXet) == 1) {
+                streak++;
+                ngayDangXet = ngayTiepTheo;
+            } else {
+                break;
+            }
+        }
+
+        return streak;
+    }
+
+    private List<String> layDanhSachNgayCoBaiVietDuyNhat() {
+        List<String> danhSachNgay = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT DISTINCT " + COL_NGAY_THANG + " FROM " + TABLE_NHAT_KY +
+                " ORDER BY " + COL_NGAY_THANG + " DESC";
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                danhSachNgay.add(cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return danhSachNgay;
+    }
+
+    private void ganVeDauNgay(Calendar calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+    }
+
+    private long soNgayGiuaHaiMoc(Calendar mocA, Calendar mocB) {
+        long chenhLechMs = Math.abs(mocB.getTimeInMillis() - mocA.getTimeInMillis());
+        return chenhLechMs / (24L * 60 * 60 * 1000);
+    }
+
+    // ===================== NGÀY NÀY NĂM XƯA =====================
+
+    public DiaryEntry timBaiNgayNayNamXua() {
+        Calendar homNay = Calendar.getInstance();
+        String thangNgayHomNay = String.format(Locale.US, "%02d-%02d",
+                homNay.get(Calendar.MONTH) + 1, homNay.get(Calendar.DAY_OF_MONTH));
+        String ngayHomNayDayDu = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .format(homNay.getTime());
+
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT * FROM " + TABLE_NHAT_KY +
+                " WHERE substr(" + COL_NGAY_THANG + ", 6) = ?" +
+                " AND " + COL_NGAY_THANG + " != ?" +
+                " ORDER BY " + COL_NGAY_THANG + " DESC LIMIT 1";
+        Cursor cursor = db.rawQuery(query, new String[]{thangNgayHomNay, ngayHomNayDayDu});
+
+        DiaryEntry entry = null;
+        if (cursor.moveToFirst()) {
+            entry = new DiaryEntry(
+                    cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_THANG)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_NOI_DUNG)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_TAM_TRANG)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_THE_GAN)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_TAO))
+            );
+        }
+        cursor.close();
+        db.close();
+        return entry;
+    }
+
+    // ===================== TÌM KIẾM + LỌC THEO THẺ (MỚI) =====================
+
+    // Lấy danh sách TẤT CẢ tên thẻ đã từng được dùng thật (không trùng lặp) trong
+    // toàn bộ nhật ký - dùng để đổ vào ChipGroup của bottom sheet lọc thẻ. the_gan
+    // lưu nhiều thẻ cách nhau dấu phẩy trong 1 dòng, phải tách + gộp lại bằng tay,
+    // không có cách nào làm việc này bằng 1 câu SQL đơn giản.
+    public List<String> layDanhSachTheDaSuDung() {
+        List<String> ketQua = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT " + COL_THE_GAN + " FROM " + TABLE_NHAT_KY +
+                " WHERE " + COL_THE_GAN + " IS NOT NULL AND " + COL_THE_GAN + " != ''";
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                String chuoiThe = cursor.getString(0);
+                for (String the : chuoiThe.split(",")) {
+                    String theSach = the.trim();
+                    if (!theSach.isEmpty() && !ketQua.contains(theSach)) {
+                        ketQua.add(theSach);
+                    }
+                }
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+
+        Collections.sort(ketQua);
+        return ketQua;
+    }
+
+    // Tìm kiếm theo nội dung (đã bỏ dấu, không phân biệt hoa/thường) VÀ/HOẶC lọc
+    // theo thẻ (OR - chỉ cần trùng ÍT NHẤT 1 thẻ trong danh sách đang lọc, theo
+    // đúng quyết định mày chọn). Lọc bằng Java thay vì SQL để tự xử lý bỏ dấu
+    // tiếng Việt cho chuẩn - SQLite không có sẵn collation tiếng Việt.
+    public List<DiaryEntry> timKiemVaLoc(String tuKhoaTimKiem, List<String> danhSachTheDangLoc) {
+        List<DiaryEntry> tatCaBaiViet = getAllDiaries();
+        List<DiaryEntry> ketQua = new ArrayList<>();
+
+        String tuKhoaDaBoDau = boDauTiengViet(tuKhoaTimKiem == null ? "" : tuKhoaTimKiem.trim());
+
+        for (DiaryEntry bai : tatCaBaiViet) {
+            boolean khopTimKiem = tuKhoaDaBoDau.isEmpty()
+                    || boDauTiengViet(bai.getNoiDung()).contains(tuKhoaDaBoDau);
+
+            boolean khopThe = danhSachTheDangLoc == null || danhSachTheDangLoc.isEmpty()
+                    || baiCoItNhat1TheTrongDanhSach(bai.getTheGan(), danhSachTheDangLoc);
+
+            if (khopTimKiem && khopThe) {
+                ketQua.add(bai);
+            }
+        }
+        return ketQua;
+    }
+
+    private boolean baiCoItNhat1TheTrongDanhSach(String theGanCuaBai, List<String> danhSachDangLoc) {
+        if (theGanCuaBai == null || theGanCuaBai.trim().isEmpty()) {
+            return false;
+        }
+        for (String the : theGanCuaBai.split(",")) {
+            if (danhSachDangLoc.contains(the.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Bỏ dấu tiếng Việt + chuyển chữ thường, dùng để so khớp tìm kiếm không phân
+    // biệt hoa/thường và có dấu/không dấu (mày gõ "an com" vẫn tìm ra "ăn cơm")
+    private String boDauTiengViet(String chuoiGoc) {
+        if (chuoiGoc == null) return "";
+        String daChuanHoa = Normalizer.normalize(chuoiGoc, Normalizer.Form.NFD);
+        // Xoá các dấu thanh/dấu phụ đã tách riêng ra sau bước chuẩn hoá NFD ở trên
+        daChuanHoa = daChuanHoa.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        // "đ"/"Đ" không tự tách dấu qua NFD như các chữ cái khác, phải thay tay
+        daChuanHoa = daChuanHoa.replace('đ', 'd').replace('Đ', 'D');
+        return daChuanHoa.toLowerCase(Locale.getDefault());
     }
 }

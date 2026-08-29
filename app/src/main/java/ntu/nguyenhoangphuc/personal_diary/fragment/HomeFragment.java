@@ -1,12 +1,18 @@
 package ntu.nguyenhoangphuc.personal_diary.fragment;
 
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,14 +22,21 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import ntu.nguyenhoangphuc.personal_diary.R;
 import ntu.nguyenhoangphuc.personal_diary.adapter.DiaryAdapter;
 import ntu.nguyenhoangphuc.personal_diary.database.DiaryDatabaseHelper;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
+import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
 import ntu.nguyenhoangphuc.personal_diary.activity.AddEditDiaryActivity;
 
 public class HomeFragment extends Fragment {
@@ -33,12 +46,20 @@ public class HomeFragment extends Fragment {
     private TextView textStreak;
     private View bannerOnThisDay;
     private View bannerPin;
+    private TextView bannerTitle;
+    private ImageView bannerThumb;
+    private TextView bannerExcerpt;
     private FloatingActionButton fabAddEntry;
 
-    // ↓↓↓ MỚI THÊM - field để giữ tham chiếu tới DB và Adapter, dùng lại được
-    //     ở các hàm khác trong fragment này (không chỉ trong onViewCreated)
     private DiaryDatabaseHelper dbHelper;
     private DiaryAdapter adapter;
+
+    private DiaryEntry baiNgayNayNamXua;
+
+    // MỚI - danh sách tên thẻ đang được CHỌN để lọc (rỗng = không lọc theo thẻ,
+    // hiện tất cả). Giữ ở field vì cần dùng lại mỗi lần search text đổi HOẶC
+    // mỗi lần bấm Áp dụng lọc trong bottom sheet.
+    private final List<String> danhSachTheDangLoc = new ArrayList<>();
 
     @Nullable
     @Override
@@ -51,8 +72,6 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Toolbar tự vẽ ô tìm kiếm sẵn trong layout XML, ở đây chỉ cần gắn thêm
-        // menu ⋮ (Xuất .txt, Sắp xếp) - MaterialToolbar tự hiện icon overflow luôn.
         MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.menu_diary_list);
         toolbar.setOverflowIcon(ContextCompat.getDrawable(requireContext(), R.drawable.ic_more_vert));
@@ -64,6 +83,9 @@ public class HomeFragment extends Fragment {
             } else if (id == R.id.action_sort) {
                 // TODO: hiện menu chọn kiểu sắp xếp khi tới lượt làm tính năng này
                 return true;
+            } else if (id == R.id.action_loc_tag) {
+                moBottomSheetLocTag();
+                return true;
             }
             return false;
         });
@@ -72,21 +94,16 @@ public class HomeFragment extends Fragment {
         textStreak = view.findViewById(R.id.text_streak);
         bannerOnThisDay = view.findViewById(R.id.banner_on_this_day);
         bannerPin = view.findViewById(R.id.banner_pin);
+        bannerTitle = view.findViewById(R.id.banner_title);
+        bannerThumb = view.findViewById(R.id.banner_thumb);
+        bannerExcerpt = view.findViewById(R.id.banner_excerpt);
         recyclerDiary = view.findViewById(R.id.recycler_diary);
         fabAddEntry = view.findViewById(R.id.fab_add_entry);
 
-        // Ẩn banner "Ngày này năm xưa" tạm thời vì chưa có logic kiểm tra ngày trùng.
-        // Ẩn cả banner lẫn chấm ghim (bannerPin) - nếu chỉ ẩn banner mà quên chấm ghim,
-        // chấm đó vẫn còn đứng lơ lửng trên màn hình vì nó là View riêng, không nằm trong banner.
-        bannerOnThisDay.setVisibility(View.GONE);
-        bannerPin.setVisibility(View.GONE);
-
-        // ↓↓↓ MỚI THÊM - thay cho 2 dòng TODO cũ (gắn Adapter + load dữ liệu thật)
         dbHelper = new DiaryDatabaseHelper(requireContext());
         recyclerDiary.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        List<DiaryEntry> danhSachNhatKy = dbHelper.getAllDiaries();
-        adapter = new DiaryAdapter(requireContext(), danhSachNhatKy, dbHelper);
+        adapter = new DiaryAdapter(requireContext(), new ArrayList<>(), dbHelper);
         adapter.setOnItemClickListener(entry -> {
             Intent intent = new Intent(requireContext(), AddEditDiaryActivity.class);
             intent.putExtra(AddEditDiaryActivity.EXTRA_DIARY_ID, entry.getId());
@@ -94,9 +111,31 @@ public class HomeFragment extends Fragment {
         });
         recyclerDiary.setAdapter(adapter);
 
-        // TODO: load textStreak thật + bật lại bannerOnThisDay/bannerPin khi có
-        //       bài trùng ngày/tháng năm trước (việc #3, chưa làm - cần hàm tính
-        //       streak trong DiaryDatabaseHelper trước, hiện chưa có)
+        // MỚI - live search: lọc lại danh sách MỖI KHI mày gõ thêm/xoá 1 ký tự,
+        // không cần bấm Enter hay icon tìm kiếm nào cả
+        editSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                apDungTimKiemVaLoc();
+            }
+        });
+
+        bannerOnThisDay.setOnClickListener(v -> {
+            if (baiNgayNayNamXua != null) {
+                Intent intent = new Intent(requireContext(), AddEditDiaryActivity.class);
+                intent.putExtra(AddEditDiaryActivity.EXTRA_DIARY_ID, baiNgayNayNamXua.getId());
+                startActivity(intent);
+            }
+        });
+
+        apDungTimKiemVaLoc(); // load danh sách đầy đủ lần đầu (chưa search/lọc gì)
+        capNhatStreakVaBanner();
 
         fabAddEntry.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), AddEditDiaryActivity.class);
@@ -107,11 +146,138 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Load lại danh sách mỗi khi quay lại màn Home - để bài mới thêm/sửa
-        // từ AddEditDiaryActivity hiện ra ngay
+        // SỬA: gọi apDungTimKiemVaLoc() thay vì getAllDiaries() thẳng - để nếu
+        // mày đang search/lọc dở mà bấm vào 1 bài để Sửa rồi quay lại Home,
+        // bộ lọc vẫn được giữ nguyên chứ không bị mất trắng về danh sách đầy đủ
         if (adapter != null && dbHelper != null) {
-            List<DiaryEntry> danhSachMoi = dbHelper.getAllDiaries();
-            adapter.capNhatDanhSach(danhSachMoi);
+            apDungTimKiemVaLoc();
+            capNhatStreakVaBanner();
+        }
+    }
+
+    // Gộp CẢ từ khoá đang gõ LẪN danh sách thẻ đang lọc thành 1 lần gọi DB duy
+    // nhất, rồi cập nhật lại RecyclerView - gọi mỗi khi 1 trong 2 điều kiện này
+    // đổi (gõ search HOẶC bấm Áp dụng/Bỏ lọc trong bottom sheet)
+    private void apDungTimKiemVaLoc() {
+        if (adapter == null || dbHelper == null) return;
+        String tuKhoa = editSearch.getText().toString();
+        List<DiaryEntry> ketQua = dbHelper.timKiemVaLoc(tuKhoa, danhSachTheDangLoc);
+        adapter.capNhatDanhSach(ketQua);
+    }
+
+    // ===================== LỌC THEO THẺ (MỚI) =====================
+
+    // Mở BottomSheetDialog cho mày chọn thẻ muốn lọc - đổ danh sách thẻ ĐÃ TỪNG
+    // dùng thật (không phải danh sách cố định) vào ChipGroup, tick sẵn thẻ nào
+    // đang lọc từ trước (nếu mày mở lại sau khi đã áp dụng 1 lần)
+    private void moBottomSheetLocTag() {
+        List<String> danhSachTheDaDung = dbHelper.layDanhSachTheDaSuDung();
+
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        sheet.setContentView(R.layout.layout_bottom_sheet_loc_tag);
+
+        ChipGroup chipGroup = sheet.findViewById(R.id.cgTheDeLoc);
+        TextView tvChuaCoThe = sheet.findViewById(R.id.tvChuaCoThe);
+        Button btnBoLoc = sheet.findViewById(R.id.btnBoLoc);
+        Button btnApDungLoc = sheet.findViewById(R.id.btnApDungLoc);
+
+        if (chipGroup == null || btnBoLoc == null || btnApDungLoc == null) return;
+
+        if (danhSachTheDaDung.isEmpty()) {
+            chipGroup.setVisibility(View.GONE);
+            if (tvChuaCoThe != null) tvChuaCoThe.setVisibility(View.VISIBLE);
+        } else {
+            chipGroup.setVisibility(View.VISIBLE);
+            if (tvChuaCoThe != null) tvChuaCoThe.setVisibility(View.GONE);
+
+            for (String ten : danhSachTheDaDung) {
+                Chip chip = new Chip(requireContext());
+                chip.setText(ten);
+                chip.setCheckable(true);
+                // Tick sẵn nếu thẻ này đang nằm trong bộ lọc hiện tại
+                chip.setChecked(danhSachTheDangLoc.contains(ten));
+                chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+                chip.setChipBackgroundColor(ContextCompat.getColorStateList(requireContext(), R.color.chip_bg_selector));
+                chip.setChipStrokeColor(ContextCompat.getColorStateList(requireContext(), R.color.chip_stroke_selector));
+                chip.setCheckedIconVisible(true);
+                chip.setCheckedIconTint(ContextCompat.getColorStateList(requireContext(), R.color.accent_terracotta));
+                chipGroup.addView(chip);
+            }
+        }
+
+        btnBoLoc.setOnClickListener(v -> {
+            danhSachTheDangLoc.clear();
+            apDungTimKiemVaLoc();
+            sheet.dismiss();
+            Toast.makeText(requireContext(), "Đã bỏ lọc thẻ", Toast.LENGTH_SHORT).show();
+        });
+
+        btnApDungLoc.setOnClickListener(v -> {
+            List<String> theDuocChon = new ArrayList<>();
+            for (int i = 0; i < chipGroup.getChildCount(); i++) {
+                View con = chipGroup.getChildAt(i);
+                if (con instanceof Chip && ((Chip) con).isChecked()) {
+                    theDuocChon.add(((Chip) con).getText().toString());
+                }
+            }
+            danhSachTheDangLoc.clear();
+            danhSachTheDangLoc.addAll(theDuocChon);
+            apDungTimKiemVaLoc();
+            sheet.dismiss();
+
+            if (danhSachTheDangLoc.isEmpty()) {
+                Toast.makeText(requireContext(), "Chưa chọn thẻ nào - hiện tất cả bài", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(requireContext(),
+                        "Đang lọc theo: " + String.join(", ", danhSachTheDangLoc),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        sheet.show();
+    }
+
+    // ===================== STREAK + BANNER (không đổi so với trước) =====================
+
+    private void capNhatStreakVaBanner() {
+        int soNgayStreak = dbHelper.tinhSoNgayStreak();
+        if (soNgayStreak <= 0) {
+            textStreak.setText(R.string.streak_chua_co);
+        } else {
+            textStreak.setText(getString(R.string.streak_so_ngay, soNgayStreak));
+        }
+
+        baiNgayNayNamXua = dbHelper.timBaiNgayNayNamXua();
+        if (baiNgayNayNamXua == null) {
+            bannerOnThisDay.setVisibility(View.GONE);
+            bannerPin.setVisibility(View.GONE);
+            return;
+        }
+
+        bannerOnThisDay.setVisibility(View.VISIBLE);
+        bannerPin.setVisibility(View.VISIBLE);
+
+        int namHomNay = Calendar.getInstance().get(Calendar.YEAR);
+        int namBaiCu = Integer.parseInt(baiNgayNayNamXua.getNgayThang().substring(0, 4));
+        int soNamCachDay = Math.max(1, namHomNay - namBaiCu);
+        bannerTitle.setText(getString(R.string.banner_title_nam, soNamCachDay));
+
+        bannerExcerpt.setText(baiNgayNayNamXua.getNoiDung());
+        ganAnhBanner(baiNgayNayNamXua.getId());
+    }
+
+    private void ganAnhBanner(int diaryId) {
+        List<DiaryPhoto> danhSachAnh = dbHelper.getPhotosForDiary(diaryId);
+        if (danhSachAnh.isEmpty()) {
+            bannerThumb.setImageDrawable(null);
+            return;
+        }
+
+        String duongDan = danhSachAnh.get(0).getDuongDanAnh();
+        if (new File(duongDan).exists()) {
+            bannerThumb.setImageBitmap(BitmapFactory.decodeFile(duongDan));
+        } else {
+            bannerThumb.setImageDrawable(null);
         }
     }
 }

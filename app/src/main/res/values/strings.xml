@@ -4,9 +4,12 @@
     <string name="cd_search">Biểu tượng tìm kiếm</string>
     <string name="cd_streak">Biểu tượng streak</string>
     <string name="streak_placeholder">12 ngày liên tiếp</string>
+    <string name="streak_so_ngay">%d ngày liên tiếp</string>
+    <string name="streak_chua_co">Chưa có streak, viết bài đầu tiên nào!</string>
 
     <string name="banner_title">1 năm trước, hôm nay</string>
-    <string name="banner_placeholder">Mày đã viết về…</string>
+    <string name="banner_title_nam">%d năm trước, hôm nay</string>
+    <string name="banner_placeholder">Bạn đã viết về…</string>
     <string name="cd_banner_thumb">Ảnh minh hoạ bài viết năm trước</string>
     <string name="cd_open">Mở xem bài viết cũ</string>
 
@@ -27,7 +30,7 @@
     <string name="chia_se_nhat_ky">Chia sẻ nhật ký</string>
     <string name="doc_nhat_ky">Đọc nhật ký thành tiếng</string>
 
-    <string name="noi_dung_hint">Hôm nay của mày thế nào\u2026</string>
+    <string name="noi_dung_hint">Hôm nay của bạn thế nào\u2026</string>
     <string name="nhap_giong_noi">Nhập nội dung bằng giọng nói</string>
     <string name="dang_nghe">Đang nghe, bạn nói đi\u2026</string>
 
@@ -59,13 +62,19 @@
 
     <string-array name="danh_sach_goi_y_viet">
         <item>Điều gì khiến bạn mỉm cười hôm nay?</item>
-        <item>Hôm nay mày biết ơn điều gì nhất?</item>
-        <item>Có chuyện gì làm mày căng thẳng không, viết ra cho nhẹ đầu?</item>
+        <item>Hôm nay bạn biết ơn điều gì nhất?</item>
+        <item>Có chuyện gì làm bạn căng thẳng không, viết ra cho nhẹ đầu?</item>
         <item>Bạn đã học được điều gì mới hôm nay?</item>
-        <item>Khoảnh khắc đáng nhớ nhất hôm nay của mày là lúc nào?</item>
+        <item>Khoảnh khắc đáng nhớ nhất hôm nay của bạn là lúc nào?</item>
         <item>Có ai hôm nay khiến bạn thấy vui hoặc dễ chịu không?</item>
         <item>Bạn muốn ngày mai của mình khác gì so với hôm nay?</item>
     </string-array>
+
+    <!-- ===== Bổ sung cho HomeFragment (lọc theo thẻ) ===== -->
+    <string name="loc_theo_the_tieu_de">Lọc theo thẻ</string>
+    <string name="chua_co_the_nao">Bạn chưa có thẻ nào để lọc</string>
+    <string name="bo_loc">Bỏ lọc</string>
+    <string name="ap_dung">Áp dụng</string>
 
     <string name="dong_xem_anh">Đóng xem ảnh</string>
 </resources>
