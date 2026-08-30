@@ -32,6 +32,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/card_bg"
+        app:elevation="0dp"
         app:itemIconTint="@color/bottom_nav_color_selector"
         app:itemTextColor="@color/bottom_nav_color_selector"
         app:itemRippleColor="@color/bg_secondary"
@@ -41,5 +42,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- MỚI: Ruy băng chỉ tab đang chọn - đặt SAU bottom_nav trong XML để được
+         vẽ ĐÈ LÊN cả nav_top_border lẫn phần trên cùng của bottom_nav (thứ tự
+         vẽ trong ConstraintLayout đi theo thứ tự khai báo, con khai sau đè lên
+         con khai trước). android:visibility="invisible" lúc đầu để tránh bị
+         "giật hình" hiện tạm ở góc trái (x=0) trong 1 khung hình trước khi
+         MainActivity.java kịp tính đúng vị trí tab đang chọn rồi mới hiện ra -
+         xem giải thích đầy đủ ở diChuyenRuyBangToiTab() bên Java.
+         layout_marginBottom ÂM để nó nhô 1 nửa lên trên đường viền, còn nửa
+         dưới (phần đuôi chữ V) chồng vào bên trong bottom_nav - đúng khớp
+         mockup mày gửi. Vị trí ngang (constraintStart) chỉ là điểm neo x=0 ban
+         đầu, Java sẽ dùng translationX để "đẩy" nó đi chứ không sửa constraint. -->
+    <ImageView
+        android:id="@+id/ribbon_indicator"
+        android:layout_width="14dp"
+        android:layout_height="10dp"
+        android:layout_marginBottom="-5dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_ribbon_bookmark"
+        android:visibility="invisible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
