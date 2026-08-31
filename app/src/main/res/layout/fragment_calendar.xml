@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main">
+
+    <!-- ===== Khối 1: Điều hướng tháng ===== -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/khoiDieuHuongThang"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingVertical="4dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Dùng chung ic_chevron_right, lật ngang bằng scaleX="-1" thay vì
+             vẽ icon mũi tên trái riêng - đúng như mày dặn -->
+        <ImageButton
+            android:id="@+id/btnThangTruoc"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Tháng trước"
+            android:padding="12dp"
+            android:scaleX="-1"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="@color/nav_inactive"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/tvThangNam"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Tháng 8, 2026"
+            app:layout_constraintStart_toEndOf="@id/btnThangTruoc"
+            app:layout_constraintEnd_toStartOf="@id/btnThangSau"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageButton
+            android:id="@+id/btnThangSau"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Tháng sau"
+            android:padding="12dp"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="@color/nav_inactive"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ===== Khối 2: Hàng tên thứ, tĩnh, tuần bắt đầu Thứ 2 (đã chốt) ===== -->
+    <LinearLayout
+        android:id="@+id/hangTenThu"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp"
+        android:paddingBottom="4dp"
+        app:layout_constraintTop_toBottomOf="@id/khoiDieuHuongThang"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 7 TextView cùng layout_weight=1 -> tự chia đều 7 cột, luôn khớp
+             cột với rvLichThang bên dưới vì cùng paddingHorizontal=4dp -->
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="T2" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="T3" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="T4" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="T5" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="T6" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="T7" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="@color/nav_inactive" android:text="CN" />
+    </LinearLayout>
+
+    <!-- ===== Khối 3: Lưới ngày trong tháng - CỐ ĐỊNH, không cuộn cùng danh sách ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvLichThang"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="4dp"
+        android:overScrollMode="never"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="7"
+        app:layout_constraintTop_toBottomOf="@id/hangTenThu"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_o_ngay_lich"
+        tools:itemCount="35" />
+    <!-- Nếu app:spanCount không ăn (hiếm khi xảy ra, nhưng có thể do version
+         thư viện) thì set tay trong Java:
+         rvLichThang.setLayoutManager(new GridLayoutManager(requireContext(), 7)); -->
+
+    <!-- Đường kẻ mảnh phân tách lưới lịch và danh sách bài, dùng border_soft
+         cho nhẹ, không giành sự chú ý khỏi nội dung -->
+    <View
+        android:id="@+id/duongKePhanCach"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:background="@color/border_soft"
+        app:layout_constraintTop_toBottomOf="@id/rvLichThang"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Nhãn ngày đang xem - tao thêm cho rõ ngữ cảnh, KHÔNG có trong bảng ID
+         mày đưa, xóa được nếu không cần -->
+    <TextView
+        android:id="@+id/tvNgayDangChon"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingHorizontal="16dp"
+        android:textSize="14sp"
+        android:textColor="@color/nav_inactive"
+        tools:text="Bài viết ngày 15/08/2026"
+        app:layout_constraintTop_toBottomOf="@id/duongKePhanCach"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ===== Khối 4: Danh sách bài của ngày đang chọn - cuộn riêng,
+         height=0dp -> chiếm hết phần còn lại của màn hình ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvBaiVietTrongNgay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintTop_toBottomOf="@id/tvNgayDangChon"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:listitem="@layout/item_diary_entry" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

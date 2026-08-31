@@ -85,4 +85,9 @@
     <string name="sap_xep_tieu_de">Sắp xếp theo</string>
     <string name="sap_xep_moi_nhat_truoc">Mới nhất trước</string>
     <string name="sap_xep_cu_nhat_truoc">Cũ nhất trước</string>
+
+    <!-- ===== Bổ sung cho CalendarFragment ===== -->
+    <string name="calendar_thang_nam">Tháng %1$d, %2$d</string>
+    <string name="calendar_chua_chon_ngay">Chọn 1 ngày để xem bài viết</string>
+    <string name="calendar_bai_viet_ngay">Bài viết ngày %1$s</string>
 </resources>

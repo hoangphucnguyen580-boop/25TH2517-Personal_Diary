@@ -14,6 +14,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashSet;
+import java.util.Set;
 
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
@@ -415,5 +417,57 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         // "đ"/"Đ" không tự tách dấu qua NFD như các chữ cái khác, phải thay tay
         daChuanHoa = daChuanHoa.replace('đ', 'd').replace('Đ', 'D');
         return daChuanHoa.toLowerCase(Locale.getDefault());
+    }
+
+    // ===================== LỊCH (MỚI) =====================
+
+    // Trả về tập hợp các ngày (yyyy-MM-dd) trong 1 tháng cụ thể CÓ ÍT NHẤT 1 bài
+    // viết - dùng để quyết định ô nào trên lưới lịch hiện chấm "có bài".
+    // thangNam định dạng "yyyy-MM" (vd "2026-08") - LIKE khớp 6 ký tự đầu của
+    // cột ngay_thang, không cần parse ngày ra Calendar cho phức tạp.
+    public Set<String> layDanhSachNgayCoBaiTrongThang(String thangNam) {
+        Set<String> ketQua = new HashSet<>();
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT DISTINCT " + COL_NGAY_THANG + " FROM " + TABLE_NHAT_KY +
+                " WHERE " + COL_NGAY_THANG + " LIKE ?";
+        Cursor cursor = db.rawQuery(query, new String[]{thangNam + "%"});
+
+        if (cursor.moveToFirst()) {
+            do {
+                ketQua.add(cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return ketQua;
+    }
+
+    // Lấy toàn bộ bài viết của ĐÚNG 1 ngày cụ thể (yyyy-MM-dd) - dùng đổ vào
+    // rvBaiVietTrongNgay khi bấm chọn 1 ô ngày trên lưới lịch. Có thể có NHIỀU
+    // bài cùng 1 ngày (app không cấm viết 2 bài/ngày), nên trả về List chứ
+    // không phải 1 DiaryEntry duy nhất.
+    public List<DiaryEntry> layDanhSachBaiTheoNgay(String ngayThang) {
+        List<DiaryEntry> danhSach = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT * FROM " + TABLE_NHAT_KY + " WHERE " + COL_NGAY_THANG + " = ?" +
+                " ORDER BY " + COL_NGAY_TAO + " DESC";
+        Cursor cursor = db.rawQuery(query, new String[]{ngayThang});
+
+        if (cursor.moveToFirst()) {
+            do {
+                DiaryEntry entry = new DiaryEntry(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_THANG)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_NOI_DUNG)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_TAM_TRANG)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_THE_GAN)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_TAO))
+                );
+                danhSach.add(entry);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return danhSach;
     }
 }

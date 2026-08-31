@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="48dp">
+    <!-- 48dp để đủ vùng chạm tối thiểu chuẩn accessibility Android -->
+
+    <!-- Nền tròn báo "hôm nay" / "đang chọn", mặc định ẩn -->
+    <View
+        android:id="@+id/nenTrangThaiNgay"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_ngay_hien_tai"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tvSoNgay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textSize="14sp"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="15" />
+
+    <!-- Chấm báo "có bài" - tái dùng bg_pin_dot.xml có sẵn, mặc định ẩn -->
+    <View
+        android:id="@+id/chamCoBai"
+        android:layout_width="4dp"
+        android:layout_height="4dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/bg_pin_dot"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+</FrameLayout>
