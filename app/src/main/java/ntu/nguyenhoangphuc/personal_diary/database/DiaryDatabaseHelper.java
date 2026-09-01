@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.HashSet;
 import java.util.Set;
 
+import ntu.nguyenhoangphuc.personal_diary.model.AnhKyNiem;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
 
@@ -46,9 +47,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    // onConfigure được gọi TRƯỚC onCreate/onUpgrade, đúng chỗ để bật ràng buộc khoá ngoại.
-    // SQLite mặc định TẮT khoá ngoại — không bật dòng này thì ON DELETE CASCADE
-    // Ở bảng AnhNhatKy sẽ không hoạt động, xoá bài viết sẽ để lại ảnh mồ côi trong database.
     @Override
     public void onConfigure(SQLiteDatabase db) {
         super.onConfigure(db);
@@ -79,15 +77,12 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(taoBangAnh);
     }
 
-    // xoá bảng cũ rồi tạo lại cho đơn giản
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ANH_NHAT_KY);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NHAT_KY);
         onCreate(db);
     }
-
-    //CRUD cơ bản cho NhatKy
 
     public long insertDiary(DiaryEntry entry) {
         SQLiteDatabase db = getWritableDatabase();
@@ -132,8 +127,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    //CRUD cơ bản cho AnhNhatKy
-
     public long insertPhoto(DiaryPhoto photo) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -172,7 +165,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return danhSachAnh;
     }
 
-    // Cập nhật 1 bài đã có sẵn - dùng khi Sửa bài (khác insertDiary là Thêm bài mới)
     public void updateDiary(DiaryEntry entry) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -180,12 +172,10 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_NOI_DUNG, entry.getNoiDung());
         values.put(COL_TAM_TRANG, entry.getTamTrang());
         values.put(COL_THE_GAN, entry.getTheGan());
-        // KHÔNG update COL_NGAY_TAO - giữ nguyên thời điểm tạo bài gốc, chỉ sửa nội dung
         db.update(TABLE_NHAT_KY, values, COL_ID + " = ?", new String[]{String.valueOf(entry.getId())});
         db.close();
     }
 
-    // Lấy đúng 1 bài theo id - dùng khi mở màn Sửa để tải dữ liệu cũ lên
     public DiaryEntry getDiaryById(int diaryId) {
         SQLiteDatabase db = getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NHAT_KY + " WHERE " + COL_ID + " = ?";
@@ -207,8 +197,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return entry;
     }
 
-    // Xoá hết ảnh cũ của 1 bài trước khi ghi lại danh sách ảnh mới - dùng khi Sửa bài,
-    // đơn giản hơn nhiều so với so sánh xem ảnh nào giữ/thêm/xoá/đổi chú thích
     public void deletePhotosForDiary(int diaryId) {
         SQLiteDatabase db = getWritableDatabase();
         db.delete(TABLE_ANH_NHAT_KY, COL_NHAT_KY_ID + " = ?", new String[]{String.valueOf(diaryId)});
@@ -217,11 +205,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
 
     // ===================== STREAK =====================
 
-    // Tính số ngày liên tiếp GẦN NHẤT có ít nhất 1 bài nhật ký, cho phép "khoan"
-    // đúng 1 ngày - nếu bài gần nhất là HÔM QUA (chưa kịp viết hôm nay) vẫn tính
-    // là còn streak, giống cách nhiều app streak khác (Duolingo,...) đang làm.
-    // Nếu bài gần nhất cũ hơn hôm qua -> streak coi như đã đứt, trả về 0.
-    // (Mày đã xác nhận CHỐT giữ nguyên cơ chế khoan này, không đổi sang strict.)
     public int tinhSoNgayStreak() {
         List<String> danhSachNgay = layDanhSachNgayCoBaiVietDuyNhat();
         if (danhSachNgay.isEmpty()) {
@@ -328,12 +311,8 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return entry;
     }
 
-    // ===================== TÌM KIẾM + LỌC THEO THẺ (MỚI) =====================
+    // ===================== TÌM KIẾM + LỌC THEO THẺ =====================
 
-    // Lấy danh sách TẤT CẢ tên thẻ đã từng được dùng thật (không trùng lặp) trong
-    // toàn bộ nhật ký - dùng để đổ vào ChipGroup của bottom sheet lọc thẻ. the_gan
-    // lưu nhiều thẻ cách nhau dấu phẩy trong 1 dòng, phải tách + gộp lại bằng tay,
-    // không có cách nào làm việc này bằng 1 câu SQL đơn giản.
     public List<String> layDanhSachTheDaSuDung() {
         List<String> ketQua = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
@@ -359,14 +338,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return ketQua;
     }
 
-    // Tìm kiếm theo nội dung (đã bỏ dấu, không phân biệt hoa/thường) VÀ/HOẶC lọc
-    // theo thẻ (OR - chỉ cần trùng ÍT NHẤT 1 thẻ trong danh sách đang lọc, theo
-    // đúng quyết định mày chọn). Lọc bằng Java thay vì SQL để tự xử lý bỏ dấu
-    // tiếng Việt cho chuẩn - SQLite không có sẵn collation tiếng Việt.
-    // MỚI - thêm tham số moiNhatTruoc để hỗ trợ tính năng Sắp xếp ở menu ⋮.
-    // getAllDiaries() bên trong đã ORDER BY ngay_thang DESC sẵn (tức mới nhất
-    // trước), nên khi moiNhatTruoc=true thì KHÔNG cần sort thêm gì cả - chỉ khi
-    // mày chọn "Cũ nhất trước" mới cần đảo ngược lại.
     public List<DiaryEntry> timKiemVaLoc(String tuKhoaTimKiem, List<String> danhSachTheDangLoc, boolean moiNhatTruoc) {
         List<DiaryEntry> tatCaBaiViet = getAllDiaries();
         List<DiaryEntry> ketQua = new ArrayList<>();
@@ -385,9 +356,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
             }
         }
 
-        // ngay_thang lưu dạng chuỗi "yyyy-MM-dd" nên so sánh trực tiếp bằng
-        // compareTo() (kiểu so sánh chữ cái) vẫn cho đúng thứ tự thời gian -
-        // không cần parse ra Date/Calendar cho phức tạp
         if (!moiNhatTruoc) {
             Collections.sort(ketQua, (baiA, baiB) -> baiA.getNgayThang().compareTo(baiB.getNgayThang()));
         }
@@ -407,24 +375,16 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return false;
     }
 
-    // Bỏ dấu tiếng Việt + chuyển chữ thường, dùng để so khớp tìm kiếm không phân
-    // biệt hoa/thường và có dấu/không dấu (mày gõ "an com" vẫn tìm ra "ăn cơm")
     private String boDauTiengViet(String chuoiGoc) {
         if (chuoiGoc == null) return "";
         String daChuanHoa = Normalizer.normalize(chuoiGoc, Normalizer.Form.NFD);
-        // Xoá các dấu thanh/dấu phụ đã tách riêng ra sau bước chuẩn hoá NFD ở trên
         daChuanHoa = daChuanHoa.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        // "đ"/"Đ" không tự tách dấu qua NFD như các chữ cái khác, phải thay tay
         daChuanHoa = daChuanHoa.replace('đ', 'd').replace('Đ', 'D');
         return daChuanHoa.toLowerCase(Locale.getDefault());
     }
 
-    // ===================== LỊCH (MỚI) =====================
+    // ===================== LỊCH =====================
 
-    // Trả về tập hợp các ngày (yyyy-MM-dd) trong 1 tháng cụ thể CÓ ÍT NHẤT 1 bài
-    // viết - dùng để quyết định ô nào trên lưới lịch hiện chấm "có bài".
-    // thangNam định dạng "yyyy-MM" (vd "2026-08") - LIKE khớp 6 ký tự đầu của
-    // cột ngay_thang, không cần parse ngày ra Calendar cho phức tạp.
     public Set<String> layDanhSachNgayCoBaiTrongThang(String thangNam) {
         Set<String> ketQua = new HashSet<>();
         SQLiteDatabase db = getReadableDatabase();
@@ -442,10 +402,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return ketQua;
     }
 
-    // Lấy toàn bộ bài viết của ĐÚNG 1 ngày cụ thể (yyyy-MM-dd) - dùng đổ vào
-    // rvBaiVietTrongNgay khi bấm chọn 1 ô ngày trên lưới lịch. Có thể có NHIỀU
-    // bài cùng 1 ngày (app không cấm viết 2 bài/ngày), nên trả về List chứ
-    // không phải 1 DiaryEntry duy nhất.
     public List<DiaryEntry> layDanhSachBaiTheoNgay(String ngayThang) {
         List<DiaryEntry> danhSach = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
@@ -469,5 +425,40 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         db.close();
         return danhSach;
+    }
+
+    // ===================== KỶ NIỆM (MỚI) =====================
+
+    // Lấy TẤT CẢ ảnh trong toàn bộ nhật ký, kèm ngay_thang của bài viết chứa
+    // ảnh đó (JOIN AnhNhatKy với NhatKy qua nhat_ky_id) - dùng cho
+    // MemoriesFragment để nhóm ảnh theo tháng/năm. Sắp mới nhất trước theo
+    // ngay_thang của BÀI VIẾT (không phải lúc ảnh được thêm), khớp đúng cách
+    // toàn app đang hiểu "mới nhất" (giống getAllDiaries() đang ORDER BY DESC).
+    public List<AnhKyNiem> layTatCaAnhKemNgay() {
+        List<AnhKyNiem> ketQua = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT " + TABLE_ANH_NHAT_KY + "." + COL_NHAT_KY_ID + ", "
+                + TABLE_ANH_NHAT_KY + "." + COL_DUONG_DAN_ANH + ", "
+                + TABLE_NHAT_KY + "." + COL_NGAY_THANG +
+                " FROM " + TABLE_ANH_NHAT_KY +
+                " INNER JOIN " + TABLE_NHAT_KY + " ON " + TABLE_ANH_NHAT_KY + "." + COL_NHAT_KY_ID
+                + " = " + TABLE_NHAT_KY + "." + COL_ID +
+                " ORDER BY " + TABLE_NHAT_KY + "." + COL_NGAY_THANG + " DESC, "
+                + TABLE_ANH_NHAT_KY + "." + COL_THU_TU + " ASC";
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                AnhKyNiem anh = new AnhKyNiem(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(COL_NHAT_KY_ID)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_DUONG_DAN_ANH)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COL_NGAY_THANG))
+                );
+                ketQua.add(anh);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return ketQua;
     }
 }

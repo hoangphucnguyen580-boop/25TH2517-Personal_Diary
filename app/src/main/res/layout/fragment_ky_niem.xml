@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_main">
+
+    <!-- ====== KHỐI TIÊU ĐỀ — cố định trên cùng ====== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvTieuDeKyNiem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kỷ niệm"
+            android:textSize="20sp"
+            android:fontFamily="@font/baloo_2_bold"
+            android:textColor="@color/text_primary" />
+
+        <!--
+          Mày ghi "để dành chỗ" cho dòng đếm ảnh nhưng chưa đặt tên ID, tao đặt tạm
+          tvSoLuongAnh — đổi lại nếu mày muốn tên khác. Text "0 ảnh" là giá trị mặc
+          định thật (không phải chỉ để xem trước), Java ghi đè số thật sau khi đếm xong.
+        -->
+        <TextView
+            android:id="@+id/tvSoLuongAnh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="0 ảnh"
+            android:textSize="13sp"
+            android:fontFamily="@font/baloo_2_bold"
+            android:textColor="@color/text_secondary" />
+    </LinearLayout>
+
+    <!-- Viền mờ tách khối tiêu đề khỏi nội dung — 1dp thay vì đổ bóng, giữ đúng
+         phong cách phẳng "sổ tay" của app, không thêm hiệu ứng elevation lạ -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/border_soft" />
+
+    <!-- ====== KHỐI NỘI DUNG — rỗng hoặc lưới, chỉ 1 cái hiện tại 1 thời điểm ====== -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- Trạng thái rỗng: CẢ nhật ký chưa có tấm ảnh nào -->
+        <LinearLayout
+            android:id="@+id/layoutRongKyNiem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <!-- Icon trang trí thuần, ý nghĩa đã có ở dòng chữ bên dưới rồi nên để
+                 contentDescription null — TalkBack sẽ bỏ qua, không đọc 2 lần thừa -->
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_photo_library"
+                android:contentDescription="@null"
+                app:tint="@color/accent_terracotta" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Chưa có ảnh kỷ niệm nào"
+                android:textSize="15sp"
+                android:fontFamily="@font/baloo_2_bold"
+                android:textColor="@color/text_secondary"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- Lưới ảnh: hiện khi có ít nhất 1 ảnh. GridLayoutManager 3 cột set trong Java -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvKyNiem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+    </FrameLayout>
+
+</LinearLayout>

@@ -90,4 +90,7 @@
     <string name="calendar_thang_nam">Tháng %1$d, %2$d</string>
     <string name="calendar_chua_chon_ngay">Chọn 1 ngày để xem bài viết</string>
     <string name="calendar_bai_viet_ngay">Bài viết ngày %1$s</string>
+
+    <!-- ===== Bổ sung cho MemoriesFragment ===== -->
+    <string name="so_luong_anh_ky_niem">%d ảnh</string>
 </resources>
