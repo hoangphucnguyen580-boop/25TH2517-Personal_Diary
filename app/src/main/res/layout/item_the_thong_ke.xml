@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="6dp">
+
+    <!-- Tên thẻ - tái dùng pill có sẵn -->
+    <TextView
+        android:id="@+id/tvTenThe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_pill_tag"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="4dp"
+        android:text="Công việc"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <!-- Thanh mini tỉ lệ: weightSum=100 cố định trên LinearLayout cha, viewTiLeThe co giãn
+         theo % lúc Java set weight. Phần weight còn thừa (100 - %) không bị chiếm, để lộ
+         nền border_soft làm "track" phía sau - đây là kỹ thuật LinearLayout weight chuẩn,
+         không cần custom View riêng cho thanh nhỏ này. -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="8dp"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="10dp"
+        android:orientation="horizontal"
+        android:weightSum="100"
+        android:background="@color/border_soft">
+
+        <View
+            android:id="@+id/viewTiLeThe"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0"
+            android:background="@color/accent_terracotta" />
+    </LinearLayout>
+
+    <!-- Số lần dùng -->
+    <TextView
+        android:id="@+id/tvSoLanDung"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+</LinearLayout>

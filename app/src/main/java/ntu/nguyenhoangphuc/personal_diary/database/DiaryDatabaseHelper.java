@@ -12,14 +12,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import ntu.nguyenhoangphuc.personal_diary.model.AnhKyNiem;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryEntry;
 import ntu.nguyenhoangphuc.personal_diary.model.DiaryPhoto;
+import ntu.nguyenhoangphuc.personal_diary.model.ThongKeThang;
+import ntu.nguyenhoangphuc.personal_diary.model.ThongKeThe;
 
 public class DiaryDatabaseHelper extends SQLiteOpenHelper {
 
@@ -427,13 +431,8 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return danhSach;
     }
 
-    // ===================== KỶ NIỆM (MỚI) =====================
+    // ===================== KỶ NIỆM =====================
 
-    // Lấy TẤT CẢ ảnh trong toàn bộ nhật ký, kèm ngay_thang của bài viết chứa
-    // ảnh đó (JOIN AnhNhatKy với NhatKy qua nhat_ky_id) - dùng cho
-    // MemoriesFragment để nhóm ảnh theo tháng/năm. Sắp mới nhất trước theo
-    // ngay_thang của BÀI VIẾT (không phải lúc ảnh được thêm), khớp đúng cách
-    // toàn app đang hiểu "mới nhất" (giống getAllDiaries() đang ORDER BY DESC).
     public List<AnhKyNiem> layTatCaAnhKemNgay() {
         List<AnhKyNiem> ketQua = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
@@ -458,6 +457,177 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         cursor.close();
+        db.close();
+        return ketQua;
+    }
+
+    // ===================== THỐNG KÊ (MỚI) =====================
+
+    public int demTongSoBai() {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_NHAT_KY, null);
+
+        int tongSo = 0;
+        if (cursor.moveToFirst()) {
+            tongSo = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return tongSo;
+    }
+
+    public int demTongSoAnh() {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ANH_NHAT_KY, null);
+
+        int tongSo = 0;
+        if (cursor.moveToFirst()) {
+            tongSo = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return tongSo;
+    }
+
+    // Streak DÀI NHẤT TỪNG ĐẠT trong suốt lịch sử - khác với tinhSoNgayStreak()
+    // ở trên (chỉ tính streak ĐANG chạy tính đến hôm nay). Duyệt qua toàn bộ
+    // danh sách ngày có bài, tìm chuỗi ngày liên tiếp dài nhất.
+    public int tinhStreakDaiNhat() {
+        List<String> danhSachNgay = layDanhSachNgayCoBaiVietDuyNhat();
+        if (danhSachNgay.isEmpty()) {
+            return 0;
+        }
+
+        SimpleDateFormat dinhDangLuu = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+
+        int streakDaiNhatTimDuoc = 1;
+        int streakHienTaiDangDem = 1;
+
+        for (int i = 1; i < danhSachNgay.size(); i++) {
+            try {
+                Calendar ngayTruoc = Calendar.getInstance();
+                ngayTruoc.setTime(dinhDangLuu.parse(danhSachNgay.get(i - 1)));
+                ganVeDauNgay(ngayTruoc);
+
+                Calendar ngaySau = Calendar.getInstance();
+                ngaySau.setTime(dinhDangLuu.parse(danhSachNgay.get(i)));
+                ganVeDauNgay(ngaySau);
+
+                if (soNgayGiuaHaiMoc(ngayTruoc, ngaySau) == 1) {
+                    streakHienTaiDangDem++;
+                } else {
+                    streakHienTaiDangDem = 1;
+                }
+            } catch (ParseException e) {
+                streakHienTaiDangDem = 1;
+            }
+
+            if (streakHienTaiDangDem > streakDaiNhatTimDuoc) {
+                streakDaiNhatTimDuoc = streakHienTaiDangDem;
+            }
+        }
+
+        return streakDaiNhatTimDuoc;
+    }
+
+    // Đếm số bài theo từng loại tâm trạng - LinkedHashMap giữ đúng thứ tự cố
+    // định 5 mood, khớp thứ tự hiển thị ở layoutChuThichTamTrang bên StatsFragment
+    public Map<String, Integer> demSoLuongTheoTamTrang() {
+        Map<String, Integer> ketQua = new LinkedHashMap<>();
+        ketQua.put("happy", 0);
+        ketQua.put("calm", 0);
+        ketQua.put("sad", 0);
+        ketQua.put("angry", 0);
+        ketQua.put("neutral", 0);
+
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT " + COL_TAM_TRANG + ", COUNT(*) FROM " + TABLE_NHAT_KY +
+                " WHERE " + COL_TAM_TRANG + " IS NOT NULL AND " + COL_TAM_TRANG + " != ''" +
+                " GROUP BY " + COL_TAM_TRANG;
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                String maMood = cursor.getString(0);
+                int soLuong = cursor.getInt(1);
+                if (ketQua.containsKey(maMood)) {
+                    ketQua.put(maMood, soLuong);
+                }
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return ketQua;
+    }
+
+    // Top 5 thẻ dùng nhiều nhất - tách chuỗi the_gan giống hệt cách
+    // layDanhSachTheDaSuDung() làm, chỉ khác là đếm số lần thay vì lấy tên duy nhất
+    public List<ThongKeThe> layTop5TheDaSuDung() {
+        Map<String, Integer> demThe = new LinkedHashMap<>();
+
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT " + COL_THE_GAN + " FROM " + TABLE_NHAT_KY +
+                " WHERE " + COL_THE_GAN + " IS NOT NULL AND " + COL_THE_GAN + " != ''";
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                String chuoiThe = cursor.getString(0);
+                for (String the : chuoiThe.split(",")) {
+                    String theSach = the.trim();
+                    if (theSach.isEmpty()) continue;
+
+                    int soHienTai = demThe.containsKey(theSach) ? demThe.get(theSach) : 0;
+                    demThe.put(theSach, soHienTai + 1);
+                }
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+
+        List<ThongKeThe> danhSachDayDu = new ArrayList<>();
+        for (Map.Entry<String, Integer> hang : demThe.entrySet()) {
+            danhSachDayDu.add(new ThongKeThe(hang.getKey(), hang.getValue()));
+        }
+
+        Collections.sort(danhSachDayDu, (theA, theB) -> theB.getSoLanDung() - theA.getSoLanDung());
+
+        if (danhSachDayDu.size() > 5) {
+            return danhSachDayDu.subList(0, 5);
+        }
+        return danhSachDayDu;
+    }
+
+    // Số bài viết của 6 tháng gần đây (tính cả tháng hiện tại), sắp cũ->mới
+    // để vẽ biểu đồ cột trái sang phải đúng thứ tự thời gian
+    public List<ThongKeThang> laySoBaiTheo6ThangGanDay() {
+        List<ThongKeThang> ketQua = new ArrayList<>();
+
+        Calendar thangDangXet = Calendar.getInstance();
+        thangDangXet.add(Calendar.MONTH, -5); // lùi 5 tháng, cộng tháng hiện tại = đủ 6 tháng
+
+        SimpleDateFormat dinhDangThang = new SimpleDateFormat("yyyy-MM", Locale.getDefault());
+        SQLiteDatabase db = getReadableDatabase();
+
+        for (int i = 0; i < 6; i++) {
+            String thangNamDangXet = dinhDangThang.format(thangDangXet.getTime());
+            int thangHienThi = thangDangXet.get(Calendar.MONTH) + 1;
+
+            String query = "SELECT COUNT(*) FROM " + TABLE_NHAT_KY +
+                    " WHERE " + COL_NGAY_THANG + " LIKE ?";
+            Cursor cursor = db.rawQuery(query, new String[]{thangNamDangXet + "%"});
+
+            int soBai = 0;
+            if (cursor.moveToFirst()) {
+                soBai = cursor.getInt(0);
+            }
+            cursor.close();
+
+            ketQua.add(new ThongKeThang("T" + thangHienThi, soBai));
+
+            thangDangXet.add(Calendar.MONTH, 1);
+        }
+
         db.close();
         return ketQua;
     }

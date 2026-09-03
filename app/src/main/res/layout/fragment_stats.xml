@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main">
+
+    <ScrollView
+        android:id="@+id/scrollThongKe"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="20dp">
+
+            <!-- 1. TIÊU ĐỀ MÀN - copy y hệt cỡ chữ/font với tvTieuDeKyNiem -->
+            <TextView
+                android:id="@+id/tvTieuDeThongKe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Thống kê"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:fontFamily="@font/baloo_2_bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 2. CARD TỔNG QUAN NHANH - 3 cột chia đều bằng layout_weight -->
+            <LinearLayout
+                android:id="@+id/layoutTongQuan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:background="@drawable/bg_card_entry"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp">
+
+                <!-- Cột: Tổng số bài -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_pencil"
+                        app:tint="@color/accent_terracotta"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:id="@+id/tvTongSoBai"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:fontFamily="@font/baloo_2_bold"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tổng số bài"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Cột: Tổng số ảnh -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_photo"
+                        app:tint="@color/accent_terracotta"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:id="@+id/tvTongSoAnh"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:fontFamily="@font/baloo_2_bold"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tổng số ảnh"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Cột: Streak dài nhất -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <!-- ic_flame đang dùng ở Home cho streak - tao tint terracotta cho đồng bộ,
+                         nếu Home đang tint màu khác thì đổi lại theo màu đó -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_flame"
+                        app:tint="@color/accent_terracotta"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:id="@+id/tvStreakDaiNhat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:fontFamily="@font/baloo_2_bold"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Streak dài nhất"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 3. CARD TỶ LỆ TÂM TRẠNG -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_entry"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/tvTieuDeTamTrang"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tâm trạng"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/baloo_2_bold"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- Placeholder custom View - mày tự vẽ thanh chia màu theo % trong onDraw,
+                     tao chỉ đặt đúng id + chiều cao 24dp theo yêu cầu -->
+                <ntu.nguyenhoangphuc.personal_diary.widget.MoodRatioBarView
+                    android:id="@+id/viewTyLeTamTrang"
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:background="@color/border_soft"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Chú thích: khai báo TĨNH sẵn 5 dòng vì mood luôn cố định 5 loại,
+                     lúc chạy chỉ cần findViewById + setText cập nhật %, không addView động.
+                     LƯU Ý: chữ "Vui/Bình yên/Buồn/Giận/Trung lập" là đoán tạm - đổi lại
+                     đúng chữ đã đặt cho 5 mood ở màn thêm bài để đồng bộ toàn app. -->
+                <LinearLayout
+                    android:id="@+id/layoutChuThichTamTrang"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_cham_tron"
+                            android:backgroundTint="@color/mood_happy" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Vui"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvPhanTramHappy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_cham_tron"
+                            android:backgroundTint="@color/mood_calm" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Bình yên"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvPhanTramCalm"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_cham_tron"
+                            android:backgroundTint="@color/mood_sad" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Buồn"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvPhanTramSad"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_cham_tron"
+                            android:backgroundTint="@color/mood_angry" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Giận"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvPhanTramAngry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_cham_tron"
+                            android:backgroundTint="@color/mood_neutral" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Trung tính"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvPhanTramNeutral"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 4. CARD THẺ DÙNG NHIỀU NHẤT -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_entry"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/tvTieuDeTopThe"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thẻ hay dùng"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/baloo_2_bold"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- Container rỗng - Java addView(inflate(R.layout.item_the_thong_ke, ...))
+                     lặp 5 lần cho top 5 thẻ -->
+                <LinearLayout
+                    android:id="@+id/layoutTopThe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- 5. CARD SỐ BÀI THEO THÁNG -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_entry"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvTieuDeBieuDoThang"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="6 tháng gần đây"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/baloo_2_bold"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- Placeholder custom View - mày tự vẽ biểu đồ cột, tao chỉ đặt id + 150dp -->
+                <ntu.nguyenhoangphuc.personal_diary.widget.MonthlyBarChartView
+                    android:id="@+id/viewBieuDoThang"
+                    android:layout_width="match_parent"
+                    android:layout_height="150dp"
+                    android:background="@color/border_soft" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- TRẠNG THÁI RỖNG - mirror layoutRongKyNiem, chỉ hiện khi cả nhật ký chưa có bài nào -->
+    <LinearLayout
+        android:id="@+id/layoutRongThongKe"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone"
+        android:padding="32dp">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_photo_library"
+            app:tint="@color/nav_inactive"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chưa có bài nào trong nhật ký"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp" />
+    </LinearLayout>
+
+</FrameLayout>

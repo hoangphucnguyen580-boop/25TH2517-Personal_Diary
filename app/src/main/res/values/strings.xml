@@ -93,4 +93,7 @@
 
     <!-- ===== Bổ sung cho MemoriesFragment ===== -->
     <string name="so_luong_anh_ky_niem">%d ảnh</string>
+
+    <!-- ===== Bổ sung cho StatsFragment ===== -->
+    <string name="thong_ke_chua_co_the">Chưa có thẻ nào được dùng</string>
 </resources>
