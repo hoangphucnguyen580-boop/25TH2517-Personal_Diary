@@ -125,6 +125,11 @@ public class HomeFragment extends Fragment {
         });
         recyclerDiary.setAdapter(adapter);
 
+        // MỚI - giữ lâu 1 bài -> hiện dialog xác nhận trước khi xóa (đã
+        // chốt với Phúc: BẮT BUỘC hỏi lại, vì xóa là hành động không hoàn
+        // tác được)
+        adapter.setOnItemLongClickListener(this::hienDialogXacNhanXoa);
+
         // MỚI - live search: lọc lại danh sách MỖI KHI mày gõ thêm/xoá 1 ký tự,
         // không cần bấm Enter hay icon tìm kiếm nào cả
         editSearch.addTextChangedListener(new TextWatcher() {
@@ -179,7 +184,7 @@ public class HomeFragment extends Fragment {
         adapter.capNhatDanhSach(ketQua);
     }
 
-    // ===================== XUẤT FILE .TXT (MỚI) =====================
+    // XUẤT FILE .TXT (MỚI)
 
     // Xuất TOÀN BỘ nhật ký (KHÔNG theo bộ tìm kiếm/lọc đang áp dụng - đã chốt
     // với mày là xuất hết để tránh hiểu lầm "tưởng đã backup hết" trong khi
@@ -293,7 +298,7 @@ public class HomeFragment extends Fragment {
         return fileTxt;
     }
 
-    // ===================== SẮP XẾP (MỚI) =====================
+    // SẮP XẾP (MỚI)
 
     // AlertDialog kiểu radio 2 lựa chọn - bấm chọn 1 cái là áp dụng ngay + đóng
     // dialog luôn, không cần thêm nút "OK" riêng cho gọn. Khác với BottomSheet
@@ -316,7 +321,7 @@ public class HomeFragment extends Fragment {
                 .show();
     }
 
-    // ===================== LỌC THEO THẺ (MỚI) =====================
+    // LỌC THEO THẺ (MỚI)
 
     // Mở BottomSheetDialog cho mày chọn thẻ muốn lọc - đổ danh sách thẻ ĐÃ TỪNG
     // dùng thật (không phải danh sách cố định) vào ChipGroup, tick sẵn thẻ nào
@@ -388,7 +393,7 @@ public class HomeFragment extends Fragment {
         sheet.show();
     }
 
-    // ===================== STREAK + BANNER (không đổi so với trước) =====================
+    // STREAK + BANNER (không đổi so với trước)
 
     private void capNhatStreakVaBanner() {
         int soNgayStreak = dbHelper.tinhSoNgayStreak();
@@ -415,6 +420,46 @@ public class HomeFragment extends Fragment {
 
         bannerExcerpt.setText(baiNgayNayNamXua.getNoiDung());
         ganAnhBanner(baiNgayNayNamXua.getId());
+    }
+
+    // XÓA BÀI (MỚI)
+
+    // Giữ lâu (long-press) 1 bài trong danh sách -> hiện dialog hỏi lại
+    // trước khi xóa thật, vì xóa là hành động KHÔNG HOÀN TÁC được
+    private void hienDialogXacNhanXoa(DiaryEntry entry) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Xoá bài nhật ký?")
+                .setMessage("Bài viết ngày " + dinhDangNgayChoDialog(entry.getNgayThang())
+                        + " sẽ bị xoá vĩnh viễn, không thể khôi phục lại.")
+                .setPositiveButton("Xoá", (dialog, which) -> {
+                    // Xóa CẢ file ảnh thật lẫn record DB - xem giải thích đầy
+                    // đủ trong DiaryDatabaseHelper.xoaBaiNhatKyVaAnhVatLy()
+                    dbHelper.xoaBaiNhatKyVaAnhVatLy(entry.getId());
+
+                    // Load lại danh sách + streak/banner vì có thể bài vừa
+                    // xóa ảnh hưởng tới cả 2 (vd xóa mất bài đang làm streak,
+                    // hoặc xóa đúng bài đang hiện banner "ngày này năm xưa")
+                    apDungTimKiemVaLoc();
+                    capNhatStreakVaBanner();
+
+                    Toast.makeText(requireContext(), "Đã xoá bài nhật ký", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Huỷ", null)
+                .show();
+    }
+
+    // Đổi ngày lưu DB (yyyy-MM-dd) sang dạng dễ đọc (dd/MM/yyyy) riêng cho
+    // dialog xác nhận xóa - viết tách riêng, không dùng chung SimpleDateFormat
+    // với hàm xuất .txt (taoNoiDungFileTxt) để 2 tính năng không lỡ đụng
+    // chạm chung 1 field, giống tinh thần các class khác trong project
+    private String dinhDangNgayChoDialog(String ngayLuuDB) {
+        try {
+            SimpleDateFormat luu = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat hienThi = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            return hienThi.format(luu.parse(ngayLuuDB));
+        } catch (ParseException e) {
+            return ngayLuuDB;
+        }
     }
 
     private void ganAnhBanner(int diaryId) {

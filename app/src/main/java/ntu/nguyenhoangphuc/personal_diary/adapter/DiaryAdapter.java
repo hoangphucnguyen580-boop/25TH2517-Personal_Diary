@@ -43,10 +43,18 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
         void onItemClick(DiaryEntry entry);
     }
 
+    // MỚI - interface để Fragment biết khi nào 1 item bị GIỮ LÂU (long-press),
+    // dùng để mở dialog xác nhận xóa - khác hẳn OnItemClickListener ở trên
+    // (bấm thường -> mở màn Sửa)
+    public interface OnItemLongClickListener {
+        void onItemLongClick(DiaryEntry entry);
+    }
+
     private final Context context;
     private final DiaryDatabaseHelper dbHelper;
     private List<DiaryEntry> danhSachNhatKy;
     private OnItemClickListener itemClickListener;
+    private OnItemLongClickListener itemLongClickListener;
 
     // dinhDangLuu: định dạng ngày lưu trong DB (yyyy-MM-dd)
     // dinhDangHienThi: định dạng hiển thị ra màn hình cho dễ đọc (dd/MM/yyyy)
@@ -61,6 +69,10 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.itemClickListener = listener;
+    }
+
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.itemLongClickListener = listener;
     }
 
     // Gọi hàm này mỗi khi có dữ liệu mới (sau khi thêm/sửa/xoá) để RecyclerView vẽ lại
@@ -100,6 +112,18 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
             if (itemClickListener != null) {
                 itemClickListener.onItemClick(entry);
             }
+        });
+
+        // MỚI - 7. Giữ lâu (long-press) vào item -> báo ra ngoài cho Fragment
+        // xử lý (mở dialog xác nhận xóa). return true để báo đã "tiêu thụ"
+        // xong sự kiện long-click này - chặn không cho nó lan tiếp thành 1
+        // sự kiện click thường ngay sau khi nhả tay ra (nếu trả về false,
+        // có thể vô tình mở nhầm màn Sửa ngay sau khi vừa long-press)
+        holder.itemView.setOnLongClickListener(v -> {
+            if (itemLongClickListener != null) {
+                itemLongClickListener.onItemLongClick(entry);
+            }
+            return true;
         });
     }
 

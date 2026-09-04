@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.io.File;
 import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -207,7 +208,31 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    // ===================== STREAK =====================
+    // ===================== XÓA BÀI NHẬT KÝ (MỚI) =====================
+
+    // Xoá TOÀN BỘ 1 bài nhật ký - khác hẳn deleteDiary() ở trên (hàm đó chỉ
+    // xoá đúng 1 dòng trong bảng NhatKy). Hàm này xoá CẢ file ảnh THẬT trong
+    // bộ nhớ máy trước, rồi mới xoá record trong DB - nếu chỉ xoá record mà
+    // quên xoá file, mấy tấm ảnh đó nằm mồ côi vĩnh viễn trong
+    // getFilesDir()/anh_nhat_ky/, không ai dọn, app phình dung lượng dần.
+    //
+    // Record trong bảng AnhNhatKy (metadata ảnh) KHÔNG cần xoá tay - tự
+    // động bị xoá theo nhờ khai FOREIGN KEY ... ON DELETE CASCADE lúc tạo
+    // bảng (xem onCreate()), cộng với onConfigure() đã bật
+    // setForeignKeyConstraintsEnabled(true) - CASCADE chỉ hoạt động khi có
+    // ĐỦ CẢ 2 điều kiện này, thiếu 1 trong 2 là ảnh vẫn còn sót lại trong DB.
+    public void xoaBaiNhatKyVaAnhVatLy(int diaryId) {
+        List<DiaryPhoto> danhSachAnh = getPhotosForDiary(diaryId);
+        for (DiaryPhoto anh : danhSachAnh) {
+            File fileAnh = new File(anh.getDuongDanAnh());
+            if (fileAnh.exists()) {
+                fileAnh.delete();
+            }
+        }
+        deleteDiary(diaryId);
+    }
+
+    // STREAK
 
     public int tinhSoNgayStreak() {
         List<String> danhSachNgay = layDanhSachNgayCoBaiVietDuyNhat();
@@ -283,7 +308,7 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return chenhLechMs / (24L * 60 * 60 * 1000);
     }
 
-    // ===================== NGÀY NÀY NĂM XƯA =====================
+    // NGÀY NÀY NĂM XƯA
 
     public DiaryEntry timBaiNgayNayNamXua() {
         Calendar homNay = Calendar.getInstance();
@@ -315,7 +340,7 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return entry;
     }
 
-    // ===================== TÌM KIẾM + LỌC THEO THẺ =====================
+    // TÌM KIẾM + LỌC THEO THẺ
 
     public List<String> layDanhSachTheDaSuDung() {
         List<String> ketQua = new ArrayList<>();
@@ -387,7 +412,7 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return daChuanHoa.toLowerCase(Locale.getDefault());
     }
 
-    // ===================== LỊCH =====================
+    // LỊCH
 
     public Set<String> layDanhSachNgayCoBaiTrongThang(String thangNam) {
         Set<String> ketQua = new HashSet<>();
@@ -431,7 +456,7 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return danhSach;
     }
 
-    // ===================== KỶ NIỆM =====================
+    // KỶ NIỆM
 
     public List<AnhKyNiem> layTatCaAnhKemNgay() {
         List<AnhKyNiem> ketQua = new ArrayList<>();
@@ -461,7 +486,7 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return ketQua;
     }
 
-    // ===================== THỐNG KÊ (MỚI) =====================
+    // THỐNG KÊ (MỚI)
 
     public int demTongSoBai() {
         SQLiteDatabase db = getReadableDatabase();
@@ -489,9 +514,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return tongSo;
     }
 
-    // Streak DÀI NHẤT TỪNG ĐẠT trong suốt lịch sử - khác với tinhSoNgayStreak()
-    // ở trên (chỉ tính streak ĐANG chạy tính đến hôm nay). Duyệt qua toàn bộ
-    // danh sách ngày có bài, tìm chuỗi ngày liên tiếp dài nhất.
     public int tinhStreakDaiNhat() {
         List<String> danhSachNgay = layDanhSachNgayCoBaiVietDuyNhat();
         if (danhSachNgay.isEmpty()) {
@@ -530,8 +552,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return streakDaiNhatTimDuoc;
     }
 
-    // Đếm số bài theo từng loại tâm trạng - LinkedHashMap giữ đúng thứ tự cố
-    // định 5 mood, khớp thứ tự hiển thị ở layoutChuThichTamTrang bên StatsFragment
     public Map<String, Integer> demSoLuongTheoTamTrang() {
         Map<String, Integer> ketQua = new LinkedHashMap<>();
         ketQua.put("happy", 0);
@@ -560,8 +580,6 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return ketQua;
     }
 
-    // Top 5 thẻ dùng nhiều nhất - tách chuỗi the_gan giống hệt cách
-    // layDanhSachTheDaSuDung() làm, chỉ khác là đếm số lần thay vì lấy tên duy nhất
     public List<ThongKeThe> layTop5TheDaSuDung() {
         Map<String, Integer> demThe = new LinkedHashMap<>();
 
@@ -598,13 +616,11 @@ public class DiaryDatabaseHelper extends SQLiteOpenHelper {
         return danhSachDayDu;
     }
 
-    // Số bài viết của 6 tháng gần đây (tính cả tháng hiện tại), sắp cũ->mới
-    // để vẽ biểu đồ cột trái sang phải đúng thứ tự thời gian
     public List<ThongKeThang> laySoBaiTheo6ThangGanDay() {
         List<ThongKeThang> ketQua = new ArrayList<>();
 
         Calendar thangDangXet = Calendar.getInstance();
-        thangDangXet.add(Calendar.MONTH, -5); // lùi 5 tháng, cộng tháng hiện tại = đủ 6 tháng
+        thangDangXet.add(Calendar.MONTH, -5);
 
         SimpleDateFormat dinhDangThang = new SimpleDateFormat("yyyy-MM", Locale.getDefault());
         SQLiteDatabase db = getReadableDatabase();

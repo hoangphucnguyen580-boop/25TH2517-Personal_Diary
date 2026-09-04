@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.app.AlertDialog;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -134,11 +136,16 @@ public class CalendarFragment extends Fragment {
             startActivity(intent);
         });
 
+        // MỚI - giữ lâu 1 bài -> hiện dialog xác nhận trước khi xóa, y hệt
+        // hành vi bên HomeFragment. Cả 2 màn dùng chung DiaryAdapter nên chỉ
+        // cần gắn thêm listener ở đây, không cần sửa gì thêm bên Adapter
+        diaryAdapter.setOnItemLongClickListener(this::hienDialogXacNhanXoa);
+
         rvBaiVietTrongNgay.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvBaiVietTrongNgay.setAdapter(diaryAdapter);
     }
 
-    // ===================== ĐIỀU HƯỚNG THÁNG =====================
+    // ĐIỀU HƯỚNG THÁNG
 
     private void doiThang(int soThangCong) {
         thangDangXem.add(Calendar.MONTH, soThangCong);
@@ -157,7 +164,7 @@ public class CalendarFragment extends Fragment {
         calendar.set(Calendar.MILLISECOND, 0);
     }
 
-    // ===================== VẼ LƯỚI LỊCH =====================
+    // VẼ LƯỚI LỊCH
 
     private void capNhatLuoiThang() {
         tvThangNam.setText(getString(R.string.calendar_thang_nam,
@@ -196,7 +203,7 @@ public class CalendarFragment extends Fragment {
         dayAdapter.capNhatDanhSach(danhSachO);
     }
 
-    // ===================== DANH SÁCH BÀI THEO NGÀY =====================
+    // DANH SÁCH BÀI THEO NGÀY
 
     private void capNhatDanhSachBaiVietTheoNgay() {
         if (ngayDangChonYyyyMMdd == null) {
@@ -214,5 +221,32 @@ public class CalendarFragment extends Fragment {
 
         List<DiaryEntry> danhSachBai = dbHelper.layDanhSachBaiTheoNgay(ngayDangChonYyyyMMdd);
         diaryAdapter.capNhatDanhSach(danhSachBai);
+    }
+
+    // XÓA BÀI (MỚI)
+
+    private void hienDialogXacNhanXoa(DiaryEntry entry) {
+        String ngayHienThi;
+        try {
+            ngayHienThi = dinhDangHienThiNgay.format(dinhDangLuu.parse(entry.getNgayThang()));
+        } catch (ParseException e) {
+            ngayHienThi = entry.getNgayThang();
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Xoá bài nhật ký?")
+                .setMessage("Bài viết ngày " + ngayHienThi + " sẽ bị xoá vĩnh viễn, không thể khôi phục lại.")
+                .setPositiveButton("Xoá", (dialog, which) -> {
+                    dbHelper.xoaBaiNhatKyVaAnhVatLy(entry.getId());
+
+                    // Load lại cả lưới lịch (chấm báo có bài có thể mất nếu
+                    // đây là bài cuối cùng của ngày đó) lẫn danh sách bài
+                    capNhatLuoiThang();
+                    capNhatDanhSachBaiVietTheoNgay();
+
+                    Toast.makeText(requireContext(), "Đã xoá bài nhật ký", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Huỷ", null)
+                .show();
     }
 }
