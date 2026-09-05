@@ -41,7 +41,6 @@ trạng, ảnh, thẻ phân loại, gợi ý câu viết, nhập giọng nói v�
 | 🔎 Xem ảnh phóng to | Pinch-zoom, vuốt chuyển ảnh trong cùng 1 bài viết |
 | 📤 Chia sẻ & Xuất file | Chia sẻ 1 bài viết (kèm ảnh) qua app khác, xuất toàn bộ nhật ký ra file `.txt` |
 | 🗑️ Xoá bài an toàn | Luôn hỏi xác nhận trước khi xoá — không thể hoàn tác |
-| 🌗 Light / Dark mode | Tự đổi giao diện theo chế độ hệ thống |
 
 ## 📸 Ảnh minh hoạ (Screenshots)
 
@@ -55,7 +54,7 @@ Cách làm:
 -->
 | Trang chủ | Thêm/Sửa bài viết | Lịch |
 |---|---|---|
-| ![Trang chủ](screenshots/home.png) | ![Thêm sửa bài viết](screenshots/add_edit.png) | ![Lịch](screenshots/calendar.png) |
+| ![Trang chủ](screenshots/home.jpg) | ![Thêm sửa bài viết](screenshots/add_edit.png) | ![Lịch](screenshots/calendar.png) |
 
 | Kỷ niệm | Thống kê |
 |---|---|
