@@ -5,9 +5,9 @@
 *Ứng dụng nhật ký cá nhân trên Android — ghi lại cảm xúc, kỷ niệm mỗi ngày*
 
 <!-- 👇 DÒNG NÀY = NÚT LINK VIDEO DEMO. Link nằm trong dấu ( ) cuối dòng, sau khi ")]" -->
-[![Link Video Demo](https://img.shields.io/badge/🎥_Video_Demo-Watch_on_Drive-EA4335?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1b5Y64vabIA4OPZgO62II9mlS5gyRa8M_/view?usp=drive_link)
+[![Link Video Demo](https://img.shields.io/badge/🎥_Link_Video_Demo-Watch_on_Drive-EA4335?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1b5Y64vabIA4OPZgO62II9mlS5gyRa8M_/view?usp=drive_link)
 <!-- 👇 DÒNG NÀY = NÚT LINK BÁO CÁO. Link nằm trong dấu ( ) cuối dòng, sau khi ")]" -->
-[![Link File Báo Cáo](https://img.shields.io/badge/📄_Report-View_on_Docs-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://docs.google.com/document/d/1Ucr6R7l5BN8Z5chrbbkL5xWNbmurt4W5d72luHHEQWo/edit?usp=sharing)
+[![Link File Báo Cáo](https://img.shields.io/badge/📄_Link_Bao_Cao-View_on_Docs-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://docs.google.com/document/d/1Ucr6R7l5BN8Z5chrbbkL5xWNbmurt4W5d72luHHEQWo/edit?usp=sharing)
 
 ![Java](https://img.shields.io/badge/Java-100%25-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white)
