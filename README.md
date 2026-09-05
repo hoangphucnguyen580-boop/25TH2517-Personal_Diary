@@ -54,11 +54,11 @@ Cách làm:
 -->
 | Trang chủ | Thêm/Sửa bài viết | Lịch |
 |---|---|---|
-| ![Trang chủ](screenshots/home.jpg) | ![Thêm sửa bài viết](screenshots/add_edit.png) | ![Lịch](screenshots/calendar.png) |
+| ![Trang chủ](screenshots/home.jpg) | ![Thêm sửa bài viết](screenshots/add_edit.jpg) | ![Lịch](screenshots/calendar.jpg) |
 
 | Kỷ niệm | Thống kê |
 |---|---|
-| ![Kỷ niệm](screenshots/memories.png) | ![Thống kê](screenshots/stats.png) |
+| ![Kỷ niệm](screenshots/memories.jpg) | ![Thống kê](screenshots/stats.jpg) |
 
 ## 🛠️ Công nghệ sử dụng
 
